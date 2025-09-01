@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>하동울의 휴대폰</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* ===== 기본 설정 및 프레임 ===== */
+        body { margin: 0; padding: 0; background-color: #333; font-family: 'Noto Sans KR', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        .phone { aspect-ratio: 390 / 844; max-width: 90vw; max-height: 90vh; width: 390px; height: 844px; border: 12px solid black; border-radius: 50px; box-shadow: 0 0 30px rgba(0,0,0,0.5); position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #000; }
+        .screen { width: 100%; height: 100%; position: relative; overflow: hidden; background-color: #ffffff; border-radius: 38px; }
+
+        /* ===== 페이지 전환 및 레이아웃 ===== */
+        .page { position: absolute; width: 100%; height: 100%; top: 0; left: 0; background-color: #ffffff; display: flex; flex-direction: column; transition: opacity 0.2s ease-in-out; visibility: hidden; opacity: 0; z-index: 1; color: #000000; }
+        .page.active { visibility: visible; opacity: 1; z-index: 10; }
+
+        /* ===== 공통 UI 요소 ===== */
+        .status-bar { text-align: right; padding: 18px 25px 10px 25px; font-size: 14px; font-weight: 700; flex-shrink: 0; color: #000000; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); z-index: 100; }
+        .status-bar.dark-mode { color: #ffffff; background: rgba(0, 0, 0, 0.3); }
+        .app-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; border-bottom: 1px solid #e0e0e0; flex-shrink: 0; font-weight: 700; font-size: 1.1em; background: #f8f8f8; }
+        .app-header .back-btn { font-size: 1em; cursor: pointer; color: #007AFF; }
+        .app-header .title { font-weight: bold; }
+        .content-body { flex-grow: 1; overflow-y: auto; background-color: #fff; }
+        .home-indicator-container { padding: 20px 0 10px 0; display: flex; justify-content: center; align-items: center; flex-shrink: 0; background-color: transparent; }
+        .home-indicator { width: 134px; height: 5px; background-color: #000000; border-radius: 100px; cursor: pointer; }
+
+        /* ===== 홈 화면 ===== */
+        .home-screen { background-size: cover; background-position: center; display: flex; flex-direction: column; }
+        .app-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; padding: 20px; flex-grow: 1; }
+        .app-icon { display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer; }
+        .app-icon img { width: 60px; height: 60px; border-radius: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .app-icon span { color: white; font-size: 12px; margin-top: 5px; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+        
+        /* ===== 앱별/요소별 커스텀 스타일 ===== */
+        .image-placeholder { background-color: #ccc; display: flex; justify-content: center; align-items: center; color: #666; font-size: 12px; text-align: center; padding: 10px; box-sizing: border-box; word-break: keep-all; line-height: 1.3; }
+        
+        /* 통화 */
+        .call-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid #f0f0f0; }
+        .call-info { display: flex; flex-direction: column; }
+        .call-name { font-weight: bold; font-size: 1em; }
+        .call-type { font-size: 0.8em; color: #888; }
+        .call-duration { font-size: 0.9em; color: #555; }
+        .call-item.missed .call-name, .call-item.missed .call-type { color: #FF3B30; }
+
+        /* 메시지 */
+        .message-list-item { display: flex; align-items: center; padding: 12px 20px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+        .message-sender { font-weight: bold; flex-grow: 1; }
+        .message-preview { color: #888; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; max-width: 200px; }
+        .chat-body { display: flex; flex-direction: column; padding: 20px; gap: 10px; }
+        .message-bubble { padding: 10px 15px; border-radius: 18px; max-width: 75%; line-height: 1.4; word-wrap: break-word; }
+        .message-bubble.sent { background-color: #007AFF; color: white; align-self: flex-end; }
+        .message-bubble.received { background-color: #E5E5EA; color: #000000; align-self: flex-start; }
+
+        /* 사진첩 */
+        .photo-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; }
+        .photo-item { aspect-ratio: 1 / 1; width: 100%; height: 100%; object-fit: cover; }
+        .photo-section-header { padding: 15px 20px 5px; font-weight: bold; font-size: 1.1em; background-color: #fff; }
+
+        /* 메모 */
+        .note-item { padding: 15px 20px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+        .note-title { font-weight: bold; }
+        .note-preview { color: #666; font-size: 0.9em; }
+        .note-content-view { padding: 20px; font-size: 1.1em; line-height: 1.6; white-space: pre-wrap; }
+
+        /* 일기 */
+        .diary-entry { padding: 15px 20px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+        .diary-date { font-weight: bold; color: #333; margin-bottom: 5px; }
+        .diary-preview { color: #666; font-size: 0.9em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* 캘린더 */
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; gap: 5px; padding: 10px; }
+        .day-header, .day { padding: 8px 0; }
+        .day-header { font-weight: bold; color: #888; font-size: 0.8em; }
+        .day { position: relative; }
+        .day.event::after { content: ''; position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); width: 5px; height: 5px; background-color: #007AFF; border-radius: 50%; }
+        .calendar-events { padding: 0 20px; }
+        .event-item { margin-bottom: 10px; }
+        .event-item .date { font-weight: bold; }
+
+        /* 음악 */
+        .playlist-header { text-align: center; padding: 20px; }
+        .playlist-title { font-size: 1.5em; font-weight: bold; }
+        .track-item { display: flex; align-items: center; padding: 10px 20px; border-bottom: 1px solid #f0f0f0; }
+        .track-info { flex-grow: 1; }
+        .track-title { font-weight: 500; }
+        .track-artist { color: #888; font-size: 0.9em; }
+
+        /* 커스텀 앱 */
+        .starlight-log-item, .debate-item { padding: 15px 20px; border-bottom: 1px solid #f0f0f0; }
+        .starlight-date, .debate-title { font-weight: bold; }
+        .starlight-notes, .debate-notes { color: #666; font-size: 0.9em; margin-top: 5px; white-space: pre-wrap; line-height: 1.4; }
+        
+        .meta-message-container { position: absolute; top: 60px; left: 20px; right: 20px; padding: 12px 15px; background-color: rgba(0, 0, 0, 0.75); color: white; border-radius: 12px; text-align: center; font-size: 15px; z-index: 9999; opacity: 0; visibility: hidden; transition: opacity 0.5s ease-in-out; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
+        .meta-message-container.visible { opacity: 1; visibility: visible; }
+    </style>
+</head>
+<body>
+
+<div class="phone">
+    <div class="screen">
+
+        <!-- 메타 메시지 컨테이너 -->
+        <div id="metaMessageContainer" class="meta-message-container"></div>
+        
+        <!-- 홈 화면 -->
+        <div id="home" class="page home-screen active">
+            <div class="status-bar dark-mode">12:25</div>
+            <div class="app-grid">
+                <div class="app-icon" onclick="showPage('calls')"><img src="https://raw.githubusercontent.com/sidsid-hue/sid/4186332fd67b6cfa2470d33bcad0dcad89113e2c/icon/Call.webp"><span>전화</span></div>
+                <div class="app-icon" onclick="showPage('messages')"><img src="https://raw.githubusercontent.com/sidsid-hue/sid/4186332fd67b6cfa2470d33bcad0dcad89113e2c/icon/M.webp"><span>메시지</span></div>
+                <div class="app-icon" onclick="showPage('photos')"><img src="https://raw.githubusercontent.com/sidsid-hue/sid/4186332fd67b6cfa2470d33bcad0dcad89113e2c/icon/image.webp"><span>사진</span></div>
+                <div class="app-icon" onclick="showPage('diary')"><img src="https://raw.githubusercontent.com/sidsid-hue/sid/5dad57d35f7ad0b4b766b62217e29d729076e46b/%EC%9D%BC%EA%B8%B0.webp"><span>일기</span></div>
+                <div class="app-icon" onclick="showPage('notes')"><img src="https://raw.githubusercontent.com/sidsid-hue/sid/4186332fd67b6cfa2470d33bcad0dcad89113e2c/icon/note.webp"><span>메모</span></div>
+                <div class="app-icon" onclick="showPage('calendar')"><img src="https://raw.githubusercontent.com/sidsid-hue/sid/4186332fd67b6cfa2470d33bcad0dcad89113e2c/icon/S.webp"><span>캘린더</span></div>
+                <div class="app-icon" onclick="showPage('music')"><img src="https://raw.githubusercontent.com/sidsid-hue/sid/4186332fd67b6cfa2470d33bcad0dcad89113e2c/icon/Mu.webp"><span>음악</span></div>
+                <div class="app-icon" onclick="showPage('customApp1')"><img id="customApp1Icon"><span>별빛 아틀라스</span></div>
+                <div class="app-icon" onclick="showPage('customApp2')"><img id="customApp2Icon"><span>토론 노트</span></div>
+            </div>
+            <div class="home-indicator-container">
+                <div class="home-indicator" onclick="showPage('home')"></div>
+            </div>
+        </div>
+
+        <!-- 전화 앱 -->
+        <div id="calls" class="page">
+            <div class="status-bar">12:25</div>
+            <div class="app-header">
+                <div class="back-btn" onclick="showPage('home')">홈</div>
+                <div class="title">최근 통화</div>
+                <div></div>
+            </div>
+            <div id="call-history-list" class="content-body"></div>
+        </div>
+
+        <!-- 메시지 앱 (목록) -->
+        <div id="messages" class="page">
+            <div class="status-bar">12:26</div>
+            <div class="app-header">
+                <div class="back-btn" onclick="showPage('home')">홈</div>
+                <div class="title">메시지</div>
+                <div></div>
+            </div>
+            <div id="message-list" class="content-body"></div>
+        </div>
+
+        <!-- 메시지 앱 (상세) -->
+        <div id="message-detail" class="page">
+            <div class="status-bar">12:26</div>
+            <div id="message-detail-header" class="app-header"></div>
+            <div id="message-detail-body" class="content-body chat-body"></div>
+        </div>
+
+        <!-- 사진첩 앱 -->
+        <div id="photos" class="page">
+            <div class="status-bar">12:27</div>
+             <div class="app-header">
+                <div class="back-btn" onclick="showPage('home')">홈</div>
+                <div class="title">사진첩</div>
+                <div></div>
+            </div>
+            <div id="photo-gallery" class="content-body"></div>
+        </div>
+        
+        <!-- 일기 앱 (목록) -->
+        <div id="diary" class="page">
+            <div class="status-bar">12:28</div>
+            <div class="app-header">
+                <div class="back-btn" onclick="showPage('home')">홈</div>
+                <div class="title">일기장</div>
+                <div></div>
+            </div>
+            <div id="diary-list" class="content-body"></div>
+        </div>
+
+        <!-- 일기 앱 (상세) -->
+        <div id="diary-detail" class="page">
+            <div class="status-bar">12:28</div>
+            <div id="diary-detail-header" class="app-header"></div>
+            <div id="diary-detail-content" class="content-body note-content-view"></div>
+        </div>
+
+        <!-- 메모 앱 (목록) -->
+        <div id="notes" class="page">
+            <div class="status-bar">12:29</div>
+            <div class="app-header">
+                <div class="back-btn" onclick="showPage('home')">홈</div>
+                <div class="title">메모</div>
+                <div></div>
+            </div>
+            <div id="note-list" class="content-body"></div>
+        </div>
+
+        <!-- 메모 앱 (상세) -->
+        <div id="note-detail" class="page">
+            <div class="status-bar">12:29</div>
+            <div id="note-detail-header" class="app-header"></div>
+            <div id="note-detail-content" class="content-body note-content-view"></div>
+        </div>
+
+        <!-- 캘린더 앱 -->
+        <div id="calendar" class="page">
+            <div class="status-bar">12:30</div>
+            <div class="app-header">
+                <div class="back-btn" onclick="showPage('home')">홈</div>
+                <div id="calendar-title" class="title"></div>
+                <div></div>
+            </div>
+            <div id="calendar-view" class="content-body"></div>
+        </div>
+
+        <!-- 음악 앱 -->
+        <div id="music" class="page">
+            <div class="status-bar">12:31</div>
+            <div class="app-header">
+                <div class="back-btn" onclick="showPage('home')">홈</div>
+                <div class="title">음악</div>
+                <div></div>
+            </div>
+            <div id="music-playlist" class="content-body"></div>
+        </div>
+
+        <!-- 커스텀 앱 1: 별빛 아틀라스 -->
+        <div id="customApp1" class="page">
+            <div class="status-bar">12:32</div>
+            <div class="app-header">
+                <div class="back-btn" onclick="showPage('home')">홈</div>
+                <div class="title" id="customApp1Name"></div>
+                <div></div>
+            </div>
+            <div id="customApp1Content" class="content-body"></div>
+        </div>
+
+        <!-- 커스텀 앱 2: 토론 노트 -->
+        <div id="customApp2" class="page">
+            <div class="status-bar">12:33</div>
+            <div class="app-header">
+                <div class="back-btn" onclick="showPage('home')">홈</div>
+                <div class="title" id="customApp2Name"></div>
+                <div></div>
+            </div>
+            <div id="customApp2Content" class="content-body"></div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const phoneData = {
+        callHistory: [
+            { name: "한여름", type: "수신 통화", duration: "18분 42초" },
+            { name: "엄마", type: "발신 통화", duration: "5분 11초" },
+            { name: "허가람", type: "부재중 전화", duration: "" },
+            { name: "한여름", type: "발신 통화", duration: "25분 3초" },
+            { name: "슈퍼 아저씨", type: "수신 통화", duration: "1분 58초" },
+            { name: "아빠", type: "발신 통화", duration: "7분 30초" },
+            { name: "한여름", type: "수신 통화", duration: "45분 19초" },
+            { name: "박서준 (서울 친구)", type: "수신 통화", duration: "10분 5초" },
+            { name: "엄마", type: "발신 통화", duration: "2분 20초" },
+            { name: "한여름", type: "부재중 전화", duration: "" },
+        ],
+        alarms: [
+            { time: "07:30", label: "기상", enabled: true },
+            { time: "10:00", label: "산책하기", enabled: true },
+            { time: "15:00", label: "슈퍼 가기 (약속)", enabled: true },
+            { time: "21:00", label: "아빠한테 전화하기", enabled: false },
+            { time: "23:00", label: "내일 계획 세우기", enabled: true },
+        ],
+        calendar: {
+            month: "7월",
+            year: "2025",
+            events: [
+                { date: 15, title: "시골로 이사 온 날" },
+                { date: 16, title: "한여름 처음 만난 날 ❤️" },
+                { date: 17, title: "여름이네 집 간 날" },
+                { date: 18, title: "타임캡슐 묻은 날" },
+                { date: 24, title: "허가람 오는 날" },
+            ]
+        },
+        photos: {
+            recent: [
+                "이사 온 파란 지붕 집 앞에서 찍은 풍경 사진. 맑은 하늘과 오래된 담벼락이 담겨 있다.",
+                "거목 아래 평상에 앉아 아이스크림을 먹고 있는 한여름의 뒷모습. 머리를 높게 묶고 있다.",
+                "슈퍼마켓 내부. 여러 과자와 음료수들이 진열되어 있고, 카운터의 아저씨가 희미하게 보인다.",
+                "비가 내리는 날, 젖은 길바닥과 우산을 쓴 사람들. 창문에 빗방울이 맺혀있다.",
+                "저녁 식탁에 차려진 김치찌개와 여러 반찬들. 따뜻한 집밥의 느낌."
+            ],
+            secret: [
+                "타임캡슐 편지를 쓰려고 허리를 숙인 한여름의 옆모습을 몰래 찍은 사진. 진지한 표정이 귀엽다.",
+                "한여름과 처음 대화할 때, 그녀의 보조개가 예뻐서 무심코 캡쳐한 카톡 프로필 사진.",
+                "서울에 살던 집 내 방 사진. 책상과 컴퓨터, 익숙한 풍경이 담겨있다.",
+                "친구들과 농구장에서 찍은 단체 사진. 모두 웃고 있다.",
+                "밤하늘의 별을 찍으려고 노력했지만 희미하게 몇 개의 점만 찍힌 사진."
+            ],
+        },
+        reminders: [
+            { task: "엄마랑 장보기 - 두부, 콩나물", completed: false },
+            { task: "슈퍼 아저씨랑 약속 지키기!", completed: false },
+            { task: "한여름이 재밌다고 했던 책 찾아보기", completed: false },
+            { task: "서울 친구한테 안부 연락하기", completed: true },
+            { task: "방 청소하기", completed: false },
+        ],
+        messages: [
+            {
+                id: 1,
+                sender: "한여름",
+                preview: "ㅋㅋㅋㅋㅋ그건 반칙이지!",
+                conversation: [
+                    { type: "sent", text: "오늘 슈퍼 앞에서 보기로 한 거 잊은 건 아니지?" },
+                    { type: "received", text: "당연하지! 내가 그 약속을 어떻게 잊어. 근데 너 혹시 늦잠잤어?" },
+                    { type: "sent", text: "아니거든? 방금 일어난 거 아니거든?" },
+                    { type: "received", text: "ㅋㅋㅋㅋㅋ목소리 다 잠겨있을 것 같은데. 빨리 나와. 심심해." },
+                    { type: "sent", text: "너나 나 기다리면서 아이스크림 혼자 다 먹지 마라." },
+                    { type: "received", text: "걱정마. 네가 좋아하는 소다맛은 남겨놨어." },
+                    { type: "sent", text: "오~ 좀 감동인데?" },
+                    { type: "received", text: "대신 초코맛은 내가 다 먹을거임." },
+                    { type: "sent", text: "ㅋㅋㅋㅋㅋ그건 반칙이지!" },
+                ]
+            },
+            {
+                id: 2,
+                sender: "엄마",
+                preview: "응, 괜찮아. 아들 덕분에.",
+                conversation: [
+                    { type: "sent", text: "엄마, 오늘 기분은 좀 어때요?" },
+                    { type: "received", text: "응, 괜찮아. 아들 덕분에. 공기가 좋아서 그런지 머리가 맑네." },
+                    { type: "sent", text: "다행이다. 필요한 거 있으면 말해요. 나갔다 오면서 사갈게." },
+                    { type: "received", text: "아니야. 괜찮아. 친구랑 재밌게 놀다 와." },
+                ]
+            },
+            {
+                id: 3,
+                sender: "허가람",
+                preview: "오키! 그럼 그때 보자!",
+                conversation: [
+                    { type: "received", text: "야 하동울! 나 다음주 수요일에 너네 동네 갈 듯?" },
+                    { type: "sent", text: "오 진짜? 여름이한테 들었어. 환영한다." },
+                    { type: "received", text: "ㅋㅋㅋ 여름이가 네 얘기 많이 하더라. 엄청 잘생겼다고." },
+                    { type: "sent", text: "걔가 뭘 좀 아네. 와서 보면 더 놀랄거다." },
+                    { type: "received", text: "자신감 뭔데 ㅋㅋㅋ 암튼 그때 셋이 재밌게 놀자." },
+                     { type: "sent", text: "그래. 조심해서 와라." },
+                    { type: "received", text: "오키! 그럼 그때 보자!" },
+                ]
+            },
+             {
+                id: 4,
+                sender: "결제 알림",
+                preview: "[KB카드] 1,500원(동네슈퍼)",
+                conversation: [
+                    { type: "received", text: "[KB카드] 하동울님 07/22 15:04 1,500원(동네슈퍼) 일시불. 감사합니다." },
+                    { type: "received", text: "[KB카드] 하동울님 07/20 18:56 24,000원(서점) 일시불. 감사합니다." },
+                    { type: "received", text: "[KB카드] 하동울님 07/18 14:12 1,000원(동네슈퍼) 일시불. 감사합니다." },
+                    { type: "received", text: "[KB카드] 하동울님 07/17 13:20 5,000원(방앗간) 일시불. 감사합니다." },
+                    { type: "received", text: "[KB카드] 하동울님 07/15 11:30 15,000원(온라인쇼핑) 일시불. 감사합니다." },
+                ]
+            },
+            {
+                id: 5,
+                sender: "박서준 (서울 친구)",
+                preview: "답장 좀 해라 인간아",
+                conversation: [
+                    { type: "received", text: "야 하동울. 살아있냐? 시골은 어떠냐?" },
+                    { type: "received", text: "심심해 죽는 거 아님? ㅋㅋㅋ" },
+                    { type: "sent", text: "ㅋㅋ살아있다. 생각보다 괜찮은데?" },
+                    { type: "received", text: "뻥치네. PC방도 없잖아." },
+                    { type: "sent", text: "대신 밤에 별이 잘 보여. 공기도 좋고." },
+                    { type: "received", text: "와... 너 완전 자연인 다 됐네. 답장 좀 해라 인간아" },
+                ]
+            }
+        ],
+        notes: [
+            { id: 1, type: "secret", content: "한여름은 왜 자기 이름이랑 성격이 반대라고 생각할까. 내가 보기엔 이름처럼 밝고 따뜻한데. 웃을 때 특히 더." },
+            { id: 2, type: "secret", content: "엄마가 오늘은 웃으셨다. 다행이다. 여기로 오길 잘한 걸까. 아직은 잘 모르겠다." },
+            { id: 3, type: "secret", content: "나이를 물어보고 싶은데 타이밍을 계속 놓친다. 그냥 동갑처럼 지내는 게 편한가? 오빠 소리 들으면 어색할 것 같기도 하고. ...아니, 내가 왜 이런 생각을." },
+            { id: 4, type: "normal", title: "쇼핑 리스트", content: "- 엄마가 좋아하는 과일\n- 샴푸\n- 여름이가 좋아하는 소다맛 아이스크림\n- 읽을 만한 책" },
+            { id: 5, type: "normal", title: "타임캡슐 편지 아이디어", content: "20살의 나에게.\n시골 생활은 잘 적응했는지? 혹시 한여름이랑은 아직도 연락하고 지내는지?\n17살의 나는 처음으로 누군가에게 어떻게 다가가야 할지 모르겠어서 조금 서툴렀던 것 같다." },
+            { id: 6, type: "normal", title: "마을에서 할 일", content: "- 거목 주위 산책하기\n- 경로당 할머니들께 인사드리기\n- 슈퍼 아저씨랑 농담하기\n- 아직 못 가본 샛길 가보기" },
+            { id: 7, type: "normal", title: "허가람?", content: "시내 사진관 아들. 태권도 선수. ESFJ. 여름이랑 친하다고 함. 어떤 애일지 궁금하다." },
+            { id: 8, type: "normal", title: "여름방학 계획", content: "- 책 5권 읽기\n- 매일 30분씩 운동하기\n- 마을 지도 그려보기\n- 한여름이랑 더 친해지기" }
+        ],
+        safari: {
+            recentSearches: ["여름 시골 풍경 사진", "ENTP ISFP 궁합", "재밌는 보드게임 추천", "보조개 예쁜 연예인", "마음이 편안해지는 음악"],
+            deletedHistory: ["여자애가 자꾸 생각날 때", "첫사랑 증상", "좋아하는 거 티 안 내는 법"],
+        },
+        music: {
+            playlistTitle: "시골의 여름밤 🌙",
+            tracks: [
+                { title: "나의 사춘기에게", artist: "볼빨간사춘기" },
+                { title: "밤편지", artist: "아이유" },
+                { title: "Way Back Home", artist: "숀 (SHAUN)" },
+                { title: "오래된 노래", artist: "스탠딩 에그" },
+                { title: "별 보러 가자", artist: "적재" },
+                { title: "Summer", artist: "Hisashi Joe" },
+                { title: "어떻게 이별까지 사랑하겠어, 널 사랑하는 거지", artist: "AKMU" },
+                { title: "모든 날, 모든 순간", artist: "폴킴" },
+                { title: "Universe", artist: "Official髭男dism" },
+                { title: "우주를 줄게", artist: "볼빨간사춘기" },
+            ]
+        },
+        diary: [
+            { date: "2025-07-14", content: "내일이면 서울을 떠난다. 엄마를 위한 결정이지만, 솔직히 막막하다. 친구들과 헤어지는 것도, 익숙한 모든 것을 두고 가는 것도. 시골은 어떤 곳일까." },
+            { date: "2025-07-15", content: "첫날. 집은 예쁘지만 너무 조용해서 어색하다. 엄마는 피곤해 보이신다. 저녁에 창밖을 보는데 정말 아무것도 안 보이고 풀벌레 소리만 들렸다. 언제쯤 적응할 수 있을까." },
+            { date: "2025-07-16", content: "한여름을 만났다. 넘어질 뻔한 걸 잡아줬는데, '헐, 감사합니다' 라니. 웃음이 나왔다. 이름이 여름이란다. 그리고 보조개가 정말 예뻤다. 이상하게 그 애 앞에서는 평소처럼 말이 잘 안 나왔다." },
+            { date: "2025-07-17", content: "떡을 돌리다 여름이네 집에 갔다. 빨간 지붕 집. 집 안이 따뜻하고 포근한 느낌이었다. 둘이서만 얘기하는데 시간이 가는 줄 몰랐다. 다른 여자애들이랑은 다른 느낌이다. 편하고, 즐겁다." },
+            { date: "2025-07-18", content: "타임캡슐을 썼다. 유치하다고 생각했는데, 막상 쓰다 보니 진지해졌다. 20살의 나는 어떤 모습일까. 그때도 여름이가 옆에 있을까? 편지에 쓰는 모습을 몰래 보는데, 자꾸만 시선이 갔다." },
+            { date: "2025-07-21", content: "슈퍼 아저씨와의 약속 덕분에 거의 매일 본다. 이제는 그냥 당연한 일상 같다. 같이 아이스크림 먹고,くだらない話をして、ただ一緒にいる時間がいい。내가 이렇게 누구를 기다리는 사람이었나 싶다." },
+            { date: "2025-07-24", content: "허가람이라는 친구가 왔다. 여름이랑 정말 친해 보였다. 둘이 웃으면서 이야기하는데, 솔직히 조금 신경 쓰였다. 이런 감정은 처음이다. 질투... 같은 건가? 유치하게." },
+            { date: "2025-07-25", content: "비가 많이 왔다. 셋이서 비 맞으면서 뛰어다녔다. 어릴 때로 돌아간 것 같았다. 추워하는 여름이에게 가디건을 줬다. 감기 걸리면 안 되니까. 그냥, 걱정이 됐다." },
+            { date: "2025-07-26", content: "결국 여름이가 감기에 걸렸다. 내 탓인 것 같아 마음이 안 좋았다. 괜찮다고는 하는데, 목소리에 힘이 없었다. 죽이라도 끓여다 줘야 하나. 오지랖인가." },
+            { date: "2025-07-28", content: "인정하기 싫지만, 인정해야겠다. 나 한여름을 좋아하는 것 같다. 언제부터였을까. 처음 봤을 때부터? 아니면 웃는 모습을 봤을 때? 모르겠다. 그냥, 지금 내 모든 생각은 온통 그 애 뿐이다." },
+        ],
+        metaMessages: [
+            "내 폰 그만 보고 내 얼굴 보지?",
+            "뭐야, 내 비밀 다 봤어?",
+            "한여름, 그렇게 궁금했어?",
+            "이따가 슈퍼 앞에서 볼래?",
+            "...바보."
+        ],
+        customApp1: {
+            appName: "별빛 아틀라스",
+            iconDescription: "dark%20blue%20icon%20with%20a%20minimalist%20white%20constellation",
+            content: {
+                logs: [
+                    { date: "2025-07-20", location: "파란 지붕 집 마당", constellation: "북두칠성, 카시오페이아", notes: "서울에서는 이렇게 선명하게 보인 적이 없는데. 생각보다 훨씬 아름답다. 언젠가 여름이랑 같이 보고 싶다." },
+                    { date: "2025-07-23", location: "거목 근처", constellation: "여름의 대삼각형 (데네브, 베가, 알타이르)", notes: "여름의 대삼각형이라니. 이름이 신기하다. 여름이가 생각났다." },
+                    { date: "2025-07-27", location: "내 방 창문", constellation: "전갈자리", notes: "비가 그치고 난 뒤라 그런지 유독 하늘이 맑다. 붉은색의 안타레스가 심장처럼 빛난다." }
+                ]
+            }
+        },
+        customApp2: {
+            appName: "토론 노트",
+            iconDescription: "minimalist%20icon%20of%20two%20opposing%20speech%20bubbles",
+            content: {
+                topics: [
+                    { title: "타임캡슐은 낭만적인가, 유치한가?", pro: ["미래의 자신에게 보내는 편지", "과거의 추억을 보존하는 의미 있는 행위", "기다림의 설렘"], con: ["결국엔 잊어버리거나 잃어버릴 가능성이 높음", "과거에 얽매일 수 있음", "그냥 일기장에 쓰는 것과 다를 바 없음"], conclusion: "누구와 함께하느냐에 따라 낭만적일 수도, 유치할 수도 있다. 여름이랑 함께해서 낭만적이었다." },
+                    { title: "도시 vs 시골, 어디가 더 살기 좋은가?", pro: ["(시골) 자연환경, 조용한 생활, 공동체 문화", "(도시) 편의시설, 문화생활, 다양한 기회"], con: ["(시골) 인프라 부족, 단조로운 삶", "(도시) 소음, 공해, 치열한 경쟁"], conclusion: "아직 잘 모르겠다. 하지만 지금은 시골의 조용함이 좋다." },
+                ]
+            }
+        }
+    };
+
+    const homeScreen = document.getElementById('home');
+    homeScreen.style.backgroundImage = `url('https://image.pollinations.ai/prompt/quiet%20countryside%20scenery%20at%20dusk,%20anime%20style')`;
+
+    function showPage(pageId) {
+        document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+    }
+
+    function renderCallHistory() {
+        const list = document.getElementById('call-history-list');
+        list.innerHTML = phoneData.callHistory.map(call => `
+            <div class="call-item ${call.type === '부재중 전화' ? 'missed' : ''}">
+                <div class="call-info">
+                    <span class="call-name">${call.name}</span>
+                    <span class="call-type">${call.type}</span>
+                </div>
+                <span class="call-duration">${call.duration}</span>
+            </div>
+        `).join('');
+    }
+
+    function renderMessageList() {
+        const list = document.getElementById('message-list');
+        list.innerHTML = phoneData.messages.map(msg => `
+            <div class="message-list-item" onclick="showMessageDetail(${msg.id})">
+                <span class="message-sender">${msg.sender}</span>
+                <span class="message-preview">${msg.preview}</span>
+            </div>
+        `).join('');
+    }
+
+    function showMessageDetail(id) {
+        const message = phoneData.messages.find(m => m.id === id);
+        const header = document.getElementById('message-detail-header');
+        const body = document.getElementById('message-detail-body');
+        
+        header.innerHTML = `
+            <div class="back-btn" onclick="showPage('messages')">뒤로</div>
+            <div class="title">${message.sender}</div>
+            <div></div>
+        `;
+        body.innerHTML = message.conversation.map(chat => `
+            <div class="message-bubble ${chat.type}">${chat.text}</div>
+        `).join('');
+        showPage('message-detail');
+        body.scrollTop = body.scrollHeight;
+    }
+
+    function renderPhotos() {
+        const gallery = document.getElementById('photo-gallery');
+        const recentHtml = phoneData.photos.recent.map(desc => `
+            <div class="photo-item image-placeholder">${desc}</div>
+        `).join('');
+        const secretHtml = phoneData.photos.secret.map(desc => `
+            <div class="photo-item image-placeholder">${desc}</div>
+        `).join('');
+        gallery.innerHTML = `
+            <div class="photo-section-header">최근 항목</div>
+            <div class="photo-grid">${recentHtml}</div>
+            <div class="photo-section-header">비밀 앨범</div>
+            <div class="photo-grid">${secretHtml}</div>
+        `;
+    }
+
+    function renderDiaryList() {
+        const list = document.getElementById('diary-list');
+        list.innerHTML = phoneData.diary.map((entry, index) => `
+            <div class="diary-entry" onclick="showDiaryDetail(${index})">
+                <div class="diary-date">${entry.date}</div>
+                <div class="diary-preview">${entry.content}</div>
+            </div>
+        `).join('');
+    }
+
+    function showDiaryDetail(index) {
+        const entry = phoneData.diary[index];
+        const header = document.getElementById('diary-detail-header');
+        const content = document.getElementById('diary-detail-content');
+        header.innerHTML = `
+            <div class="back-btn" onclick="showPage('diary')">뒤로</div>
+            <div class="title">${entry.date}</div>
+            <div></div>
+        `;
+        content.textContent = entry.content;
+        showPage('diary-detail');
+    }
+
+    function renderNotes() {
+        const list = document.getElementById('note-list');
+        list.innerHTML = phoneData.notes.map(note => `
+            <div class="note-item" onclick="showNoteDetail(${note.id})">
+                <div class="note-title">${note.type === 'secret' ? '🔒 비밀 메모' : note.title}</div>
+                <div class="note-preview">${note.type === 'secret' ? '내용을 보려면 터치하세요.' : note.content.split('\n')[0]}</div>
+            </div>
+        `).join('');
+    }
+    
+    function showNoteDetail(id) {
+        const note = phoneData.notes.find(n => n.id === id);
+        const header = document.getElementById('note-detail-header');
+        const content = document.getElementById('note-detail-content');
+        header.innerHTML = `
+            <div class="back-btn" onclick="showPage('notes')">뒤로</div>
+            <div class="title">${note.type === 'secret' ? '비밀 메모' : note.title}</div>
+            <div></div>
+        `;
+        content.textContent = note.content;
+        showPage('note-detail');
+    }
+
+    function renderCalendar() {
+        const { month, year, events } = phoneData.calendar;
+        document.getElementById('calendar-title').textContent = `${year}년 ${month}`;
+        
+        const view = document.getElementById('calendar-view');
+        const daysInMonth = 31; // 7월
+        const startDay = 1; // For simplicity, assume 1st is Monday
+
+        let calendarHtml = '<div class="calendar-grid">';
+        const dayHeaders = ['일', '월', '화', '수', '목', '금', '토'];
+        dayHeaders.forEach(h => calendarHtml += `<div class="day-header">${h}</div>`);
+        
+        for (let i = 0; i < startDay; i++) {
+            calendarHtml += '<div></div>';
+        }
+
+        for (let i = 1; i <= daysInMonth; i++) {
+            const isEventDay = events.some(e => e.date === i);
+            calendarHtml += `<div class="day ${isEventDay ? 'event' : ''}">${i}</div>`;
+        }
+        calendarHtml += '</div>';
+
+        let eventsHtml = '<div class="calendar-events">';
+        events.forEach(event => {
+            eventsHtml += `
+                <div class="event-item">
+                    <span class="date">${event.date}일:</span>
+                    <span>${event.title}</span>
+                </div>`;
+        });
+        eventsHtml += '</div>';
+
+        view.innerHTML = calendarHtml + eventsHtml;
+    }
+
+    function renderMusic() {
+        const playlist = document.getElementById('music-playlist');
+        const headerHtml = `
+            <div class="playlist-header">
+                <div class="playlist-title">${phoneData.music.playlistTitle}</div>
+            </div>
+        `;
+        const tracksHtml = phoneData.music.tracks.map(track => `
+            <div class="track-item">
+                <div class="track-info">
+                    <div class="track-title">${track.title}</div>
+                    <div class="track-artist">${track.artist}</div>
+                </div>
+            </div>
+        `).join('');
+        playlist.innerHTML = headerHtml + tracksHtml;
+    }
+
+    function renderCustomApp1() {
+        const data = phoneData.customApp1;
+        document.getElementById('customApp1Name').textContent = data.appName;
+        const content = document.getElementById('customApp1Content');
+        content.innerHTML = data.content.logs.map(log => `
+            <div class="starlight-log-item">
+                <div class="starlight-date">${log.date} - ${log.location}</div>
+                <div class="starlight-notes"><b>관측:</b> ${log.constellation}</div>
+                <div class="starlight-notes"><b>메모:</b> ${log.notes}</div>
+            </div>
+        `).join('');
+    }
+
+    function renderCustomApp2() {
+        const data = phoneData.customApp2;
+        document.getElementById('customApp2Name').textContent = data.appName;
+        const content = document.getElementById('customApp2Content');
+        content.innerHTML = data.content.topics.map(topic => `
+            <div class="debate-item">
+                <div class="debate-title">${topic.title}</div>
+                <div class="debate-notes">
+                    <b>[찬성]</b> ${topic.pro.join(', ')}<br>
+                    <b>[반대]</b> ${topic.con.join(', ')}<br>
+                    <b>[결론]</b> ${topic.conclusion}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function setupCustomAppIcons() {
+        document.getElementById('customApp1Icon').src = `https://image.pollinations.ai/prompt/${phoneData.customApp1.iconDescription}`;
+        document.getElementById('customApp2Icon').src = `https://image.pollinations.ai/prompt/${phoneData.customApp2.iconDescription}`;
+    }
+
+    function startMetaMessages() {
+        const container = document.getElementById('metaMessageContainer');
+        let messageIndex = 0;
+        setTimeout(() => {
+            const interval = setInterval(() => {
+                if (messageIndex >= phoneData.metaMessages.length) {
+                    clearInterval(interval);
+                    return;
+                }
+                container.textContent = phoneData.metaMessages[messageIndex];
+                container.classList.add('visible');
+
+                setTimeout(() => {
+                    container.classList.remove('visible');
+                }, 2500);
+
+                messageIndex++;
+            }, 3000);
+        }, 30000);
+    }
+    
+    // Initial render
+    document.addEventListener('DOMContentLoaded', () => {
+        renderCallHistory();
+        renderMessageList();
+        renderPhotos();
+        renderDiaryList();
+        renderNotes();
+        renderCalendar();
+        renderMusic();
+        renderCustomApp1();
+        renderCustomApp2();
+        setupCustomAppIcons();
+        startMetaMessages();
+    });
+</script>
+
+</body>
+</html>
