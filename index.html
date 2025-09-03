@@ -1,10 +1,12 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>한여름의 휴대폰</title>
+    <title>하유성의 휴대폰</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&display=swap" rel="stylesheet">
     <style>
         /* ===== 기본 설정 및 프레임 ===== */
         body { margin: 0; padding: 0; background-color: #333; font-family: 'Noto Sans KR', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
@@ -12,704 +14,1292 @@
         .screen { width: 100%; height: 100%; position: relative; overflow: hidden; background-color: #ffffff; border-radius: 38px; }
 
         /* ===== 페이지 전환 및 레이아웃 ===== */
-        .page { position: absolute; width: 100%; height: 100%; top: 0; left: 0; background-color: #ffffff; display: flex; flex-direction: column; transition: opacity 0.2s ease-in-out; visibility: hidden; opacity: 0; z-index: 1; color: #000000; }
+        .page { position: absolute; width: 100%; height: 100%; top: 0; left: 0; background-color: #f9f9f9; display: flex; flex-direction: column; transition: opacity 0.2s ease-in-out; visibility: hidden; opacity: 0; z-index: 1; color: #000000; }
         .page.active { visibility: visible; opacity: 1; z-index: 10; }
 
         /* ===== 공통 UI 요소 ===== */
         .status-bar { text-align: right; padding: 18px 25px 10px 25px; font-size: 14px; font-weight: 700; flex-shrink: 0; color: #000000; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); z-index: 100; }
         .status-bar.dark-mode { color: #ffffff; background: rgba(0, 0, 0, 0.3); }
-        .app-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; border-bottom: 1px solid #e0e0e0; flex-shrink: 0; font-weight: 700; font-size: 1.1em; }
-        .app-header .back-btn { cursor: pointer; font-size: 1.2em; }
-        .content-body { flex-grow: 1; overflow-y: auto; }
-        .home-indicator-container { padding: 20px 0 10px 0; display: flex; justify-content: center; align-items: center; flex-shrink: 0; background-color: inherit; }
+        .app-header { display: flex; justify-content: center; align-items: center; padding: 10px 20px; border-bottom: 1px solid #e0e0e0; flex-shrink: 0; font-weight: 700; font-size: 1.1em; background-color: #f8f8f8; position: relative; }
+        .app-header .back-button { cursor: pointer; font-size: 1.2em; font-weight: bold; position: absolute; left: 20px; }
+        .content-body { flex-grow: 1; overflow-y: auto; background-color: #ffffff; }
+        .home-indicator-container { padding: 20px 0 10px 0; display: flex; justify-content: center; align-items: center; flex-shrink: 0; }
         .home-indicator { width: 134px; height: 5px; background-color: #000000; border-radius: 100px; cursor: pointer; }
 
         /* ===== 홈 화면 ===== */
         .home-screen { background-size: cover; background-position: center; color: white; }
-        .app-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; padding: 20px; flex-grow: 1; }
-        .app-icon { display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer; }
+        .app-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; padding: 20px; flex-grow: 1; align-content: start; }
+        .app-icon { display: flex; flex-direction: column; align-items: center; cursor: pointer; text-align: center; }
         .app-icon img { width: 60px; height: 60px; border-radius: 15px; margin-bottom: 5px; }
         .app-icon span { font-size: 12px; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
-        .dock { display: grid; grid-template-columns: repeat(4, 1fr); padding: 10px 20px; background-color: rgba(255, 255, 255, 0.2); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border-radius: 20px; margin: 0 10px; flex-shrink: 0; }
-        
+        .dock { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; padding: 10px 20px; background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-radius: 20px; margin: 0 10px 5px 10px; }
+
         /* ===== 앱별/요소별 커스텀 스타일 ===== */
         .image-placeholder { background-color: #ccc; display: flex; justify-content: center; align-items: center; color: #666; font-size: 12px; text-align: center; padding: 10px; box-sizing: border-box; word-break: keep-all; line-height: 1.3; }
-        .photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 2px; }
-        .photo-item { aspect-ratio: 1 / 1; }
+        
+        .list-item { padding: 15px 20px; border-bottom: 1px solid #e8e8e8; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .list-item:hover { background-color: #f0f0f0; }
+        .list-item .title { font-weight: bold; }
+        .list-item .preview { color: #888; font-size: 0.9em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+        .list-item.missed .title { color: #FF3B30; }
 
-        .chat-body { display: flex; flex-direction: column; padding: 20px; gap: 10px; }
-        .message-bubble { padding: 10px 15px; border-radius: 18px; max-width: 75%; line-height: 1.4; word-break: break-all; }
+        /* ===== iOS Toggle Switch for Alarms ===== */
+        .alarm-toggle { display: flex; align-items: center; }
+        .toggle-switch { position: relative; display: inline-block; width: 51px; height: 31px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #E9E9EA; -webkit-transition: .4s; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 27px; width: 27px; left: 2px; bottom: 2px; background-color: white; -webkit-transition: .4s; transition: .4s; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+        input:checked + .slider { background-color: #34C759; }
+        input:checked + .slider:before { -webkit-transform: translateX(20px); -ms-transform: translateX(20px); transform: translateX(20px); }
+
+        /* 사진첩 */
+        .photo-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; }
+        .photo-item { aspect-ratio: 1 / 1; cursor: pointer; }
+        .photo-item img { width: 100%; height: 100%; object-fit: cover; }
+        .section-title { padding: 10px 20px; background-color: #f0f0f0; font-weight: bold; font-size: 0.9em; }
+        .section-title[onclick] { cursor: pointer; }
+        
+        /* ===== Photo Modal ===== */
+        .photo-modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: none; /* Hidden by default */
+            justify-content: center;
+            align-items: center;
+            z-index: 10002;
+        }
+        .photo-modal-overlay.visible {
+            display: flex;
+        }
+        .photo-modal-content {
+            max-width: 100%;
+            max-height: 80%;
+            object-fit: contain;
+        }
+        .close-photo-modal {
+            position: absolute;
+            top: 40px;
+            right: 25px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .close-photo-modal:hover,
+        .close-photo-modal:focus {
+            color: #bbb;
+            text-decoration: none;
+        }
+
+        /* 미리 알림 */
+        .reminder-item {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+        .reminder-checkbox {
+            flex-shrink: 0;
+            width: 22px;
+            height: 22px;
+            border: 2px solid #c8c8c8;
+            border-radius: 4px;
+            margin-right: 15px;
+            position: relative;
+        }
+        .reminder-checkbox.checked {
+            background-color: #000000;
+            border-color: #000000;
+        }
+        .reminder-checkbox.checked::after {
+            content: "";
+            position: absolute;
+            left: 7px;
+            top: 3px;
+            width: 6px;
+            height: 12px;
+            border: solid #FFD700; /* Pink -> Yellow */
+            border-width: 0 3px 3px 0;
+            -webkit-transform: rotate(45deg);
+            -ms-transform: rotate(45deg);
+            transform: rotate(45deg);
+        }
+
+        /* 메시지 */
+        .chat-body { display: flex; flex-direction: column; padding: 20px; }
+        .message-bubble { padding: 10px 15px; border-radius: 18px; max-width: 75%; margin-bottom: 10px; line-height: 1.4; word-wrap: break-word; }
         .message-bubble.sent { background-color: #007AFF; color: white; align-self: flex-end; }
         .message-bubble.received { background-color: #E5E5EA; color: #000000; align-self: flex-start; }
-        
-        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
-        .list-item:hover { background-color: #f9f9f9; }
-        .list-item-content { display: flex; flex-direction: column; }
-        .list-item-content .title { font-weight: 500; }
-        .list-item-content .subtitle { font-size: 0.9em; color: #888; }
-        .call-item .name.missed { color: #FF3B30; }
-        
-        .note-preview, .diary-preview { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px; }
 
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; gap: 5px; padding: 10px; }
-        .calendar-day { padding: 10px 0; }
-        .day-header { font-weight: bold; color: #888; }
-        .event-day { background-color: #ffdde0; color: #d9001a; border-radius: 50%; font-weight: bold; position: relative; }
-        .event-day::after { content: attr(data-title); display: none; position: absolute; bottom: 120%; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 5px; border-radius: 5px; font-size: 12px; white-space: nowrap; z-index: 10; }
-        .event-day:hover::after { display: block; }
-        
-        .meta-message-container { position: absolute; top: 60px; left: 20px; right: 20px; padding: 12px 15px; background-color: rgba(0, 0, 0, 0.75); color: white; border-radius: 12px; text-align: center; font-size: 15px; z-index: 9999; opacity: 0; visibility: hidden; transition: opacity 0.5s ease-in-out; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
-        .meta-message-container.visible { opacity: 1; visibility: visible; }
+        /* ===== 캘린더 (MEOWV Style) ===== */
+        #calendar .app-header {
+            font-family: 'Mochiy Pop One', sans-serif;
+            font-size: 2.5em;
+            padding: 15px 0 10px 0;
+            background: black;
+            color: #FFD700; /* Pink -> Yellow */
+            text-shadow: 0 0 4px #FFD700, 0 0 8px #FFD700; /* Pink -> Yellow */
+            border-bottom: none;
+            letter-spacing: 3px;
+        }
+        #calendar .content-body {
+            background: black;
+            padding: 10px;
+            overflow-y: hidden;
+        }
+        .calendar-container {
+            background: white;
+            border: 2px solid black;
+        }
+        .day-names {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            background-color: #FFD700; /* Pink -> Yellow */
+            color: black;
+            font-weight: 700;
+            text-align: center;
+            font-size: 0.8em;
+            border-bottom: 2px solid black;
+        }
+        .day-names div {
+            padding: 6px 0;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0;
+        }
+        .calendar-grid .day-cell {
+            aspect-ratio: 1 / 1.1;
+            position: relative;
+            border-bottom: 1px solid black;
+            border-right: 1px solid black;
+            padding: 4px;
+            font-size: 0.75em;
+        }
+        .calendar-grid .day-cell:nth-child(7n) {
+            border-right: none;
+        }
+        .calendar-grid .day-cell.empty {
+            background-color: #fdfdfd;
+        }
+        .date-container {
+            position: absolute;
+            top: 4px;
+            left: 5px;
+            right: 5px;
+            text-align: left;
+        }
+        .date-number {
+            font-weight: 700;
+            font-size: 1.1em;
+            color: #333;
+        }
+        .deco-doodle {
+            position: absolute;
+            font-size: 2.2em;
+            opacity: 0.9;
+        }
+        .event-deco {
+            top: -10px;
+            right: -10px;
+            font-size: 1.8em;
+            z-index: 5;
+        }
+        .intersection-doodle {
+            top: 0;
+            left: 0;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+        }
+        @keyframes wiggle {
+            0%, 100% { transform: rotate(-8deg); }
+            50% { transform: rotate(8deg); }
+        }
+        .animated-emoji {
+            display: inline-block;
+            animation: wiggle 0.6s ease-in-out infinite;
+        }
+        .event-day {
+            background-color: #FFD700; /* Pink -> Yellow */
+        }
+        .event-day .event-title {
+            color: black;
+        }
+        .event-day .date-number {
+            color: black;
+        }
+        .event-title {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            padding: 0 2px;
+            text-align: center;
+            font-size: 0.85em;
+            font-weight: 700;
+            line-height: 1.1;
+        }
+        .event-list {
+            display: none !important;
+        }
 
-        #note-detail-content, #diary-detail-content { padding: 20px; line-height: 1.6; white-space: pre-wrap; font-size: 1.1em; }
-        #customApp1 .content-body { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; gap: 25px; background: linear-gradient(180deg, #0f0c29, #302b63, #24243e); color: white; }
-        #customApp1 h2 { margin: 0; }
-        #customApp1 #compatibility-result { font-size: 1.5em; font-weight: bold; color: #ffaeef; }
-        #customApp2 .content-body { padding: 15px; background-color: #f7f7f7; }
-        .film-log-entry { background: white; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
-        .film-log-entry .image-placeholder { height: 200px; border-bottom: 1px solid #eee; }
-        .film-log-entry .film-log-details { padding: 15px; }
-        .film-log-details .film-log-date { font-size: 0.8em; color: #999; margin-bottom: 5px; }
-        .film-log-details .film-log-memo { font-size: 1em; line-height: 1.4; }
+        /* ===== 사파리 ===== */
+        .safari-header {
+            padding: 10px 15px;
+            background-color: #f8f8f8;
+            border-bottom: 1px solid #e0e0e0;
+            flex-shrink: 0;
+        }
+        .search-bar-container {
+            display: flex;
+            align-items: center;
+            background-color: #EFEFF4;
+            border-radius: 10px;
+        }
+        .search-icon {
+            padding: 0 4px 0 12px;
+            font-size: 1.1em;
+            color: #8E8E93;
+            line-height: 0;
+        }
+        .search-bar {
+            width: 100%;
+            padding: 8px 15px 8px 5px;
+            font-size: 1em;
+            border: none;
+            background-color: transparent;
+            box-sizing: border-box;
+            outline: none;
+        }
+        #safari-history-container {
+            display: none;
+        }
+
+        /* ===== 음악 앱 ===== */
+        #music {
+            background: linear-gradient(to bottom, #ff85c1, black);
+            color: white;
+        }
+        #music .status-bar,
+        #music .app-header,
+        #music .content-body {
+            background-color: transparent;
+        }
+        #music .app-header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        #music .list-item {
+            border-bottom-color: rgba(255, 255, 255, 0.15);
+        }
+        #music .list-item .preview {
+            color: #e0e0e0;
+        }
+        
+        /* 메모 */
+        .note-content { padding: 20px; font-size: 1.1em; line-height: 1.6; white-space: pre-wrap; }
+        .lock-icon { margin-right: 8px; }
+
+        /* 일기 (New Design) */
+        #diary .app-header {
+            background-color: #1a1a1a;
+            color: #FFFF00; /* Bright Yellow */
+            font-family: 'Mochiy Pop One', sans-serif;
+            font-size: 1.6em;
+            text-shadow: 1px 1px 0 #FF007F, -1px -1px 0 #00C7FF; /* Pink and Blue shadow */
+            border-bottom: 2px solid #FFFF00;
+            letter-spacing: 1px;
+        }
+        #diary .content-body {
+            background-color: #f0f0f0;
+            background-image:
+                linear-gradient(rgba(200, 200, 200, 0.4) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(200, 200, 200, 0.4) 1px, transparent 1px);
+            background-size: 25px 25px;
+            padding: 25px 15px;
+        }
+        .diary-entry {
+            background-color: #fff;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            box-shadow: 3px 3px 8px rgba(0,0,0,0.1);
+            position: relative;
+            border: 1px solid #ccc;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+        .diary-entry:nth-child(4n+1) { transform: rotate(-1.5deg); background-color: #fffde7; }
+        .diary-entry:nth-child(4n+2) { transform: rotate(1deg); background-color: #f3e5f5; }
+        .diary-entry:nth-child(4n+3) { transform: rotate(2deg); background-color: #fff0f5; }
+        .diary-entry:nth-child(4n+4) { transform: rotate(-1deg); background-color: #e3f2fd; }
+        .diary-entry .date {
+            font-weight: 700;
+            color: #444;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #ddd;
+        }
+        .diary-entry .content {
+            line-height: 1.6;
+            font-size: 1em;
+            color: #333;
+        }
+
+        /* 커스텀 앱 */
+        .starlight-note-body { padding: 20px; }
+        .lyric-item { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+        .lyric-item .title { font-size: 1.2em; font-weight: bold; }
+        .lyric-item .snippet { font-style: italic; color: #666; margin-top: 5px; }
+
+        /* 가사집 (Custom App 1) - 밤하늘 테마 */
+        #customApp1 .app-header {
+            background-color: #1a1a2e; /* Dark navy blue */
+            color: #FFD700; /* Gold */
+            text-shadow: 0 0 5px rgba(255, 215, 0, 0.7);
+            border-bottom: 1px solid #FFD700;
+        }
+        #customApp1 .content-body {
+            background-color: #1a1a2e; /* Dark navy blue */
+        }
+        #customApp1 .lyric-item {
+            border-bottom: 1px solid rgba(255, 215, 0, 0.3); /* Faint gold line */
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+        }
+        #customApp1 .lyric-item .title {
+            color: #ffffff; /* White title */
+        }
+        #customApp1 .lyric-item .title::before {
+            content: '⭐ ';
+            font-size: 0.9em;
+        }
+        #customApp1 .lyric-item .snippet {
+            color: #bdc3c7; /* Light grey for snippet */
+            margin-top: 8px;
+            padding-left: 28px; /* Indent snippet */
+        }
+        
+        /* ===== 알림 배너 (Notification Banner) ===== */
+        .notification-banner {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-150%);
+            width: 95%;
+            max-width: 380px;
+            background-color: rgba(240, 240, 240, 0.9);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            transition: transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+            visibility: hidden;
+        }
+        .notification-banner.show {
+            transform: translateX(-50%) translateY(0);
+            visibility: visible;
+        }
+        .notification-app-icon {
+            flex-shrink: 0;
+            margin-right: 10px;
+        }
+        .notification-app-icon img {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+        }
+        .notification-text-content {
+            flex-grow: 1;
+        }
+        .notification-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #555;
+        }
+        .notification-body {
+            font-size: 15px;
+            color: #000;
+            margin-top: 2px;
+        }
+
+        /* ===== Password Modal ===== */
+        .modal-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+        .modal-overlay.visible {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 14px;
+            width: 270px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+        }
+        .modal-content h3 {
+            margin: 0 0 8px 0;
+            font-size: 1.1em;
+            font-weight: 700;
+        }
+        #password-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            margin: 15px 0;
+            box-sizing: border-box;
+            text-align: center;
+            font-size: 1em;
+        }
+        .modal-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            border-top: 1px solid #dbdbdb;
+            padding-top: 12px;
+            margin-top: 5px;
+        }
+        .modal-buttons button {
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background-color: transparent;
+            cursor: pointer;
+            font-size: 1.05em;
+            font-weight: 400;
+            color: #007AFF;
+        }
+        .modal-buttons button#password-submit {
+            font-weight: 700;
+        }
     </style>
 </head>
 <body>
     <div class="phone">
         <div class="screen">
-
+            <div id="notification-banner" class="notification-banner">
+                <div class="notification-app-icon">
+                    <img src="https://raw.githubusercontent.com/sidsid-hue/sid/4186332fd67b6cfa2470d33bcad0dcad89113e2c/icon/M.webp" alt="Messages Icon">
+                </div>
+                <div class="notification-text-content">
+                    <div class="notification-title">010-</div>
+                    <div class="notification-body"></div>
+                </div>
+            </div>
             <!-- 홈 화면 -->
             <div id="home" class="page home-screen active">
                 <div class="status-bar dark-mode"></div>
                 <div class="app-grid">
+                    <!-- 기본 앱 -->
                     <div class="app-icon" onclick="showPage('calendar')"><img src="https://raw.githubusercontent.com/sidsid-hue/sid/4186332fd67b6cfa2470d33bcad0dcad89113e2c/icon/S.webp"><span>캘린더</span></div>
-                    <div class="app-icon" onclick="showPage('photos')"><img src="https://raw.githubusercontent.com/sidsid-hue/sid/4186332fd67b6cfa2470d33bcad0dcad89113e2c/icon/image.webp"><span>사진</span></div>
-                    <div class="app-icon" onclick="showPage('diary')"><img src="https://raw.githubusercontent.com/sidsid-hue/sid/5dad57d35f7ad0b4b766b62217e29d729076e46b/%EC%9D%BC%EA%B8%B0.webp"><span>일기장</span></div>
-                    <div class="app-icon" onclick="showPage('music')"><img src="https://raw.githubusercontent.com/sidsid-hue/sid/4186332fd67b6cfa2470d33bcad0dcad89113e2c/icon/Mu.webp"><span>음악</span></div>
+                    <div class="app-icon" onclick="showPage('photos')"><img src="https://raw.githubusercontent.com/sidsid-hue/sid/4186332fd67b6cfa2470d33bcad0dcad89113e2c/icon/image.webp"><span>사진첩</span></div>
                     <div class="app-icon" onclick="showPage('notes')"><img src="https://raw.githubusercontent.com/sidsid-hue/sid/4186332fd67b6cfa2470d33bcad0dcad89113e2c/icon/note.webp"><span>메모</span></div>
-                    <div class="app-icon" onclick="showPage('alarms')"><img src="https://raw.githubusercontent.com/sidsid-hue/sid/4186332fd67b6cfa2470d33bcad0dcad89113e2c/icon/alarm.webp"><span>시계</span></div>
+                    <div class="app-icon" onclick="handleDiaryClick()"><img src="https://github.com/sidsid-hue/sid/blob/main/free-icon-star-7656139.png?raw=true"><span>일기장</span></div>
                     <div class="app-icon" onclick="showPage('reminders')"><img src="https://raw.githubusercontent.com/sidsid-hue/sid/4186332fd67b6cfa2470d33bcad0dcad89113e2c/icon/re.webp"><span>미리 알림</span></div>
-                    <div class="app-icon" onclick="showPage('youtube')"><img src="https://raw.githubusercontent.com/sidsid-hue/sid/4186332fd67b6cfa2470d33bcad0dcad89113e2c/icon/you.webp"><span>YouTube</span></div>
-                    <div class="app-icon" onclick="showPage('amazon')"><img src="https://raw.githubusercontent.com/sidsid-hue/sid/4186332fd67b6cfa2470d33bcad0dcad89113e2c/icon/amazon.webp"><span>Amazon</span></div>
+                    <div class="app-icon" onclick="showPage('music')"><img src="https://raw.githubusercontent.com/sidsid-hue/sid/4186332fd67b6cfa2470d33bcad0dcad89113e2c/icon/Mu.webp"><span>음악</span></div>
+                    <!-- 커스텀 앱 -->
                     <div id="custom-app-icon-1" class="app-icon" onclick="showPage('customApp1')"></div>
-                    <div id="custom-app-icon-2" class="app-icon" onclick="showPage('customApp2')"></div>
                 </div>
                 <div class="dock">
                     <div class="app-icon" onclick="showPage('calls')"><img src="https://raw.githubusercontent.com/sidsid-hue/sid/4186332fd67b6cfa2470d33bcad0dcad89113e2c/icon/Call.webp"></div>
-                    <div class="app-icon" onclick="showPage('safari')"><img src="https://raw.githubusercontent.com/sidsid-hue/sid/4186332fd67b6cfa2470d33bcad0dcad89113e2c/icon/SA.webp"></div>
                     <div class="app-icon" onclick="showPage('messages')"><img src="https://raw.githubusercontent.com/sidsid-hue/sid/4186332fd67b6cfa2470d33bcad0dcad89113e2c/icon/M.webp"></div>
-                    <div class="app-icon" onclick="showPage('music')"><img src="https://raw.githubusercontent.com/sidsid-hue/sid/4186332fd67b6cfa2470d33bcad0dcad89113e2c/icon/Mu.webp"></div>
+                    <div class="app-icon" onclick="showPage('alarms')"><img src="https://github.com/sidsid-hue/sid/blob/main/alarm22.png?raw=true"></div>
+                    <div class="app-icon" onclick="showPage('safari')"><img src="https://raw.githubusercontent.com/sidsid-hue/sid/4186332fd67b6cfa2470d33bcad0dcad89113e2c/icon/SA.webp"></div>
                 </div>
-                <div class="home-indicator-container" style="background-color: transparent;"><div class="home-indicator" style="background-color: #ffffff;" onclick="showPage('home')"></div></div>
             </div>
 
-            <!-- 기본 앱 페이지들 -->
-            <div id="calls" class="page"></div>
-            <div id="alarms" class="page"></div>
-            <div id="calendar" class="page"></div>
-            <div id="photos" class="page"></div>
-            <div id="reminders" class="page"></div>
-            <div id="messages" class="page"></div>
-            <div id="message-detail" class="page"></div>
-            <div id="notes" class="page"></div>
-            <div id="note-detail" class="page"></div>
-            <div id="safari" class="page"></div>
-            <div id="music" class="page"></div>
-            <div id="youtube" class="page"></div>
-            <div id="amazon" class="page"></div>
-            <div id="diary" class="page"></div>
-            <div id="diary-detail" class="page"></div>
-            
-            <!-- 커스텀 앱 페이지들 -->
-            <div id="customApp1" class="page"></div>
-            <div id="customApp2" class="page"></div>
+            <!-- 전화 -->
+            <div id="calls" class="page">
+                <div class="status-bar"></div>
+                <div class="app-header">최근 통화</div>
+                <div class="content-body" id="call-history-list"></div>
+                <div class="home-indicator-container"><div class="home-indicator" onclick="showPage('home')"></div></div>
+            </div>
 
-            <!-- 메타 메시지 컨테이너 -->
-            <div id="meta-message-container" class="meta-message-container"></div>
+            <!-- 알람 -->
+            <div id="alarms" class="page">
+                <div class="status-bar"></div>
+                <div class="app-header">알람</div>
+                <div class="content-body" id="alarm-list"></div>
+                <div class="home-indicator-container"><div class="home-indicator" onclick="showPage('home')"></div></div>
+            </div>
+
+            <!-- 캘린더 -->
+            <div id="calendar" class="page">
+                <div class="status-bar"></div>
+                <div class="app-header" id="calendar-header"></div>
+                <div class="content-body">
+                    <div class="calendar-grid" id="calendar-grid-view"></div>
+                    <div class="event-list" id="calendar-event-list"></div>
+                </div>
+                <div class="home-indicator-container"><div class="home-indicator" onclick="showPage('home')"></div></div>
+            </div>
+
+            <!-- 사진첩 -->
+            <div id="photos" class="page">
+                <div class="status-bar"></div>
+                <div class="app-header">최근 항목</div>
+                <div class="content-body">
+                    <div class="section-title">최근 사진</div>
+                    <div class="photo-grid" id="recent-photos-grid"></div>
+                    <div class="section-title" onclick="toggleSecretPhotos()">비밀 사진</div>
+                    <div class="photo-grid" id="secret-photos-grid" style="display: none;"></div>
+                </div>
+                <div class="home-indicator-container"><div class="home-indicator" onclick="showPage('home')"></div></div>
+            </div>
+
+            <!-- 미리 알림 -->
+            <div id="reminders" class="page">
+                <div class="status-bar"></div>
+                <div class="app-header">미리 알림</div>
+                <div class="content-body" id="reminders-list"></div>
+                <div class="home-indicator-container"><div class="home-indicator" onclick="showPage('home')"></div></div>
+            </div>
+
+            <!-- 문자 목록 -->
+            <div id="messages" class="page">
+                <div class="status-bar"></div>
+                <div class="app-header">메시지</div>
+                <div class="content-body" id="message-list"></div>
+                <div class="home-indicator-container"><div class="home-indicator" onclick="showPage('home')"></div></div>
+            </div>
+            
+            <!-- 문자 상세 -->
+            <div id="message-detail" class="page">
+                <div class="status-bar"></div>
+                <div class="app-header">
+                    <span class="back-button" onclick="showPage('messages')">‹</span>
+                    <span id="message-detail-sender"></span>
+                </div>
+                <div class="content-body">
+                    <div class="chat-body" id="message-detail-content"></div>
+                </div>
+                <div class="home-indicator-container"><div class="home-indicator" onclick="showPage('home')"></div></div>
+            </div>
+
+            <!-- 메모 목록 -->
+            <div id="notes" class="page">
+                <div class="status-bar"></div>
+                <div class="app-header">메모</div>
+                <div class="content-body" id="note-list"></div>
+                <div class="home-indicator-container"><div class="home-indicator" onclick="showPage('home')"></div></div>
+            </div>
+
+            <!-- 메모 상세 -->
+            <div id="note-detail" class="page">
+                <div class="status-bar"></div>
+                <div class="app-header">
+                    <span class="back-button" onclick="showPage('notes')">‹</span>
+                    <span id="note-detail-title"></span>
+                </div>
+                <div class="content-body">
+                    <div class="note-content" id="note-detail-content"></div>
+                </div>
+                <div class="home-indicator-container"><div class="home-indicator" onclick="showPage('home')"></div></div>
+            </div>
+
+            <!-- 사파리 -->
+            <div id="safari" class="page">
+                <div class="status-bar"></div>
+                <div class="safari-header">
+                    <div class="search-bar-container">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" class="search-bar" placeholder="검색 또는 웹 사이트 이름 입력">
+                    </div>
+                </div>
+                <div class="content-body" id="safari-content"></div>
+                <div class="home-indicator-container"><div class="home-indicator" onclick="showPage('home')"></div></div>
+            </div>
+
+            <!-- 음악 -->
+            <div id="music" class="page">
+                <div class="status-bar"></div>
+                <div class="app-header" id="music-playlist-title"></div>
+                <div class="content-body" id="music-track-list"></div>
+                <div class="home-indicator-container"><div class="home-indicator" onclick="showPage('home')"></div></div>
+            </div>
+
+            <!-- 일기 -->
+            <div id="diary" class="page">
+                <div class="status-bar"></div>
+                <div class="app-header">Diary</div>
+                <div class="content-body" id="diary-list"></div>
+                <div class="home-indicator-container"><div class="home-indicator" onclick="showPage('home')"></div></div>
+            </div>
+
+            <!-- 커스텀 앱 1 -->
+            <div id="customApp1" class="page">
+                <div class="status-bar"></div>
+                <div class="app-header" id="custom-app1-header"></div>
+                <div class="content-body" id="custom-app1-content"></div>
+                <div class="home-indicator-container"><div class="home-indicator" onclick="showPage('home')"></div></div>
+            </div>
+
+            <!-- Photo Modal -->
+            <div id="photo-modal" class="photo-modal-overlay">
+                <span class="close-photo-modal">&times;</span>
+                <img class="photo-modal-content" id="modal-image">
+            </div>
+            
+            <!-- Password Modal for Notes -->
+            <div id="password-modal-overlay" class="modal-overlay">
+                <div class="modal-content">
+                    <h3>암호를 입력하세요</h3>
+                    <input type="password" id="password-input" placeholder="암호">
+                    <div class="modal-buttons">
+                        <button id="password-cancel">취소</button>
+                        <button id="password-submit">확인</button>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 
 <script>
 const phoneData = {
     callHistory: [
-        { name: "하동울", type: "발신 통화", duration: "28분 14초" },
-        { name: "엄마", type: "수신 통화", duration: "5분 3초" },
-        { name: "하동울", type: "부재중 전화", duration: "" },
-        { name: "허가람", type: "수신 통화", duration: "15분 48초" },
-        { name: "하동울", type: "발신 통화", duration: "45분 55초" },
-        { name: "언니", type: "수신 통화", duration: "12분 21초" },
-        { name: "슈퍼아저씨", type: "발신 통화", duration: "1분 10초" },
-        { name: "하동울", type: "수신 통화", duration: "1시간 2분 11초" },
-        { name: "엄마", type: "발신 통화", duration: "2분 30초" },
+        { name: "은별이❤️", type: "수신 통화", duration: "12분 34초" },
+        { name: "최서아", type: "발신 통화", duration: "28분 11초" },
+        { name: "밴드-강혁", type: "부재중 전화", duration: "" },
+        { name: "알바몬", type: "발신 통화", duration: "2분 58초" },
+        { name: "엄마", type: "부재중 전화", duration: "" },
+        { name: "김유나", type: "수신 통화", duration: "45분 2초" },
+        { name: "은별이❤️", type: "발신 통화", duration: "5분 1초" },
         { name: "모르는 번호", type: "부재중 전화", duration: "" },
+        { name: "밴드-선배", type: "수신 통화", duration: "8분 40초" },
+        { name: "박지민", type: "발신 통화", duration: "15분 55초" },
     ],
     alarms: [
-        { time: "08:00", label: "일어나기", enabled: true },
-        { time: "12:00", label: "점심 먹기", enabled: true },
-        { time: "14:00", label: "산책 나가기 (혹시 마주칠지도..)", enabled: false },
-        { time: "22:00", label: "일기 쓰기", enabled: true },
-        { time: "23:30", label: "잘 시간", enabled: true },
+        { time: "07:00", label: "일어나!! 학교 가야지!!", enabled: true },
+        { time: "16:00", label: "우리 공주님 모시러 갈 시간", enabled: true },
+        { time: "21:00", label: "밴드 합주", enabled: true },
+        { time: "23:00", label: "가사 쓰기", enabled: false },
+        { time: "23:59", label: "오늘도 끝", enabled: true },
     ],
     calendar: {
-        month: "7월",
+        month: "6월",
         year: "2025",
         events: [
-            { date: 15, title: "하동울 이사 온 날 ❤️" },
-            { date: 18, title: "타임캡슐 묻은 날" },
-            { date: 21, title: "내 생일!" },
-            { date: 23, title: "허가람 오는 날" },
+            { date: 6, title: "밴드", type: "practice" },
+            { date: 13, title: "축제", type: "festival" },
+            { date: 17, title: "재롱잔치", type: "family" },
+            { date: 28, title: "오디션", type: "audition" }
         ]
     },
     photos: {
         recent: [
-            "노을이 지는 마을 언덕의 풍경 사진. 하늘이 분홍색과 주황색으로 물들어있다.",
-            "거목 아래 평상에 앉아 찍은 내 그림자 사진. 다리가 길어보이게 나왔다.",
-            "슈퍼마켓 앞에서 아이스크림을 들고 찍은 사진. 소다맛 아이스크림이다.",
-            "비 온 뒤 맑게 갠 하늘. 땅에 웅덩이가 패여 하늘이 비친다.",
-            "길가에 핀 작은 들꽃을 접사로 찍은 사진. 꽃잎에 이슬이 맺혀있다.",
+            "https://github.com/sidsid-hue/sid/blob/main/%ED%95%98%EC%9C%A0%EC%84%B1%20%EA%B1%B0%EC%9A%B8%20%EC%85%80%EC%B9%B4.png?raw=true",
+            "https://github.com/sidsid-hue/sid/blob/main/%ED%95%98%EC%9C%A0%EC%84%B1%20%EC%85%80%EC%B9%B4.png?raw=true",
+            "https://github.com/sidsid-hue/sid/blob/main/%EA%B3%A0%EB%93%B1/%ED%95%98%EC%9D%80%EB%B3%84.png?raw=true",
+            "https://github.com/sidsid-hue/sid/blob/main/%EA%B3%A0%EB%93%B1/spellai-1756881722996.jpg?raw=true"
         ],
         secret: [
-            "파란 지붕 집이 비어있을 때 몰래 찍어둔 사진. 왠지 모르게 계속 간직하고 있었다.",
-            "하동울의 뒷모습. 타임캡슐 편지를 쓸 때 집중하고 있는 모습이 살짝 찍혔다.",
-            "동울이가 '이거 예쁘다'고 말했던 조약돌을 찍은 사진. 그애가 만졌던 돌이다.",
-            "동울이랑 같이 썼던 편지지. 혹시 몰라 남은 한 장을 간직하고 있다.",
-            "동울이 웃는 옆모습을 아주 멀리서 몰래 찍은 사진. 심하게 흔들렸지만 지울 수 없다.",
+            "https://github.com/sidsid-hue/sid/blob/main/%EB%B9%84%EB%B0%80%EC%82%AC%EC%A7%84.png?raw=true"
         ],
     },
     reminders: [
-        { task: "슈퍼 아저씨한테 빌린 펜 돌려드리기", completed: false },
-        { task: "하동울한테 초코 아이스크림 사주기", completed: false },
-        { task: "읽고 있던 '혼자의 계절' 마저 읽기", completed: true },
-        { task: "언니한테 생일선물 뭐 받고 싶은지 물어보기", completed: false },
-        { task: "가람이 오면 같이 사진 찍기", completed: false },
+        { task: "은별이 생일 선물 - 토끼 인형 사주기", completed: false },
+        { task: "담배 사기", completed: true },
+        { task: "새 기타 스트링 교체", completed: false },
+        { task: "바닐라 핸드크림 주문하기", completed: false },
+        { task: "엄마한테 용돈 달라고 말해보기...", completed: false },
     ],
     messages: [
         {
             id: 1,
-            sender: "하동울",
-            preview: "나 심심한데 뭐해?",
+            sender: "은별이❤️",
+            preview: "오빠 오늘 언제 와?? 보고싶어!",
             conversation: [
-                { type: "received", text: "오늘 날씨 진짜 좋다" },
-                { type: "sent", text: "그러게! 어제 비 온 거 거짓말 같아." },
-                { type: "received", text: "나 심심한데 뭐해?" },
-                { type: "sent", text: "나도 심심해. 거목 아래 평상?" },
-                { type: "received", text: "콜. 아이스크림 사갈게. 무슨 맛?" },
-                { type: "sent", text: "알면서~😉" },
+                { type: "received", text: "오빠 오늘 언제 와?? 보고싶어!🐰" },
+                { type: "sent", text: "오빠 연습 끝나고 바로 갈게! 까까 사갈까?" },
+                { type: "received", text: "응!! 초코송이!! 🍄" },
+                { type: "sent", text: "알겠어 이따 봐 공주님❤️" },
             ]
         },
         {
             id: 2,
-            sender: "엄마",
-            preview: "오늘 저녁은 카레!",
+            sender: "우리은행",
+            preview: "[지출] 1,500원 (GS25)",
             conversation: [
-                { type: "received", text: "딸, 밥은 잘 챙겨먹었어?" },
-                { type: "sent", text: "응! 라면 끓여먹었어~" },
-                { type: "received", text: "에고, 또 라면이야. 엄마 오늘 좀 일찍 들어갈 수 있을 것 같아. 오늘 저녁은 카레!" },
-                { type: "sent", text: "진짜?? 완전 좋아! 사랑해 엄마❤️" },
+                { type: "received", text: "[우리 체크카드] 08/02 15:30 1,500원(GS25) 잔액 12,540원" },
+                { type: "received", text: "[우리 체크카드] 08/03 08:10 4,500원(에그드랍) 잔액 8,040원" },
+                { type: "received", text: "[우리 체크카드] 08/04 19:00 25,000원(무신사) 잔액 1,200원. ※잔액부족" },
+                { type: "sent", text: "아씨" },
+                { type: "received", text: "[우리 체크카드] 08/05 13:00 12,800원(올리브영) 승인거절. 잔액부족" },
             ]
         },
         {
             id: 3,
-            sender: "허가람",
-            preview: "나 다음주에 갈 것 같아!",
+            sender: "최서아",
+            preview: "유성아 너 이번 축제 때 노래해?😍",
             conversation: [
-                { type: "received", text: "여름아! 잘 지내냐" },
-                { type: "sent", text: "당연하지! 너야말로 운동하다 다치진 않았고?" },
-                { type: "received", text: "나 다음주에 갈 것 같아! 시간 비워놔라." },
-                { type: "sent", text: "오 진짜? 마침 너한테 소개해줄 사람도 생겼는데. 잘됐다!" },
-                { type: "received", text: "누구?? 남자애야?" },
+                { type: "received", text: "유성아 너 이번 축제 때 노래해?😍" },
+                { type: "sent", text: "음~ 비밀인데? 보러 올 거야?ㅎㅎ" },
+                { type: "received", text: "당연히 가야지! 너 보러 가는 거지~" },
+                { type: "sent", text: "진짜~? 그럼 더 열심히 해야 겠다!" },
             ]
         },
         {
             id: 4,
-            sender: "문방구카드",
-            preview: "[승인] 3,500원 (행운문구)",
+            sender: "밴드-강혁",
+            preview: "야 내일 합주 늦지 마라",
             conversation: [
-                { type: "sent", text: "[문방구카드] 승인" },
-                { type: "sent", text: "한*름님" },
-                { type: "sent", text: "3,500원 (행운문구)" },
-                { type: "sent", text: "07/19 14:20" },
-                { type: "sent", text: "누적 18,500원" },
+                { type: "received", text: "야 내일 합주 늦지 마라" },
+                { type: "sent", text: "내가 언제 늦었다고😑" },
+                { type: "received", text: "저번주에 10분 늦었잖아" },
+                { type: "sent", text: "아 그건 은별이 땜에 그런거고! 안 늦는다 걱정 ㄴㄴ" },
             ]
         },
         {
             id: 5,
-            sender: "언니",
-            preview: "막내 잘 지내? 서울은 너무 덥다",
+            sender: "엄마",
+            preview: "돈없다",
             conversation: [
-                { type: "received", text: "막내 잘 지내? 서울은 너무 덥다" },
-                { type: "sent", text: "여기도 더워! 언니는 잘 지내?" },
-                { type: "received", text: "그럭저럭~ 용돈 필요하면 말하고! 사고 싶은 건 없어?" },
-                { type: "sent", text: "음... 생각해보고 말해줄게!" },
+                { type: "received", text: "오늘 늦게 들어온다" },
+                { type: "received", text: "은별이 저녁 좀 챙겨" },
+                { type: "received", text: "돈없다" },
             ]
-        }
+        },
     ],
     notes: [
-        { id: 1, type: "secret", content: "하동울은 겨울 동(冬), 바람소리 울(蔚)을 쓴다고 했다. 겨울의 바람소리라니. 차가운 이름인데, 웃을 땐 햇살 같아서 신기하다. 나는 여름인데, 왜 이렇게 조용한 걸까. 그 애 옆에 있으면 나도 좀 밝아지는 기분이다." },
-        { id: 2, type: "secret", content: "타임캡슐 편지에 좋아한다고 써버렸다. 3년 뒤에 동울이가 이걸 보면 무슨 생각을 할까? 그때 우리는 어떻게 되어 있을까. 상상만 해도 얼굴이 뜨거워진다. 부디, 이상하게 생각하지만 않았으면." },
-        { id: 3, type: "secret", content: "가람이한테 동울이 얘기를 하니까 기분이 이상했다. 내 소중한 비밀을 들킨 기분. 가람이는 좋은 친구지만... 동울이에 대한 건 나만 알고 싶은 욕심이 자꾸 생긴다." },
-        { id: 4, type: "normal", title: "사고 싶은 책 목록", content: "- 혼자의 계절 (다 읽음!)\n- 여름의 문장들\n- 어느 날, 우리는" },
-        { id: 5, type: "normal", title: "여름방학 때 하고 싶은 것", content: "1. 동울이랑 영화 보기\n2. 가람이랑 사진 찍으러 가기\n3. 엄마랑 시내 데이트\n4. 자전거 배우기\n5. 밤에 별 보러 가기" },
-        { id: 6, type: "normal", title: "슈퍼마켓 장 볼 것", content: "소다맛 아이스크림, 초코맛 아이스크림(동울이꺼), 새우깡, 콜라, 계란 한 판" },
-        { id: 7, type: "normal", title: "'혼자의 계절' 인상깊은 구절", content: "나의 사계절은 항상 혼자였어. 사계절의 다름을 알지도 못했고. 그런데 너를 만난 나는 계절의 감촉을 알게됐어." },
-        { id: 8, type: "normal", title: "좋아하는 노래 가사", content: "'어쩌면 난 너를 만나기 위해 이 모든 길을 헤매었을까' - 가사가 꼭 내 마음 같다." },
+        { id: 1, type: "secret", title: ".", content: "애들이 뒤에서 나를 대가리 꽃밭이라고 부른다고 한다.\n그렇게 보이는 게 더 낫다.\n그렇게 틀린 말도 아닌 것 같다." },
+        { id: 2, type: "secret", title: ".", content: "김주환\n- 부자인데 왜 그렇게 찐따같이 살지?\n\n강도훈\n- 허세충" },
+        { id: 3, type: "secret", title: ".", content: "1366\n혹시 모르니까 외워두기." },
+        { id: 4, type: "normal", title: "쇼핑 리스트", content: "- 계란\n- 라면\n- 은별이 초코송이\n- 막대사탕" },
+        { id: 5, type: "normal", title: "축제 공연 셋리스트", content: "1. 너에게 닿기를 - 10cm\n2. NO PAIN - 실리카겔\n3. Don't Look Back in Anger - 오아시스" },
+        { id: 6, type: "normal", title: "알바 구할 곳", content: "- 학교 앞 편의점 (야간)\n- 시내 카페 (주말)\n- 전단지 (시급 제일 셈)" },
+        { id: 7, type: "normal", title: "갖고 싶은 거", content: "- 펜더 스트라토캐스터\n- 오버핏 후드티 (회색)\n- 은별이 새 운동화" },
+        { id: 8, type: "normal", title: "오디션...", content: "가야 할까? 떨어질 바엔 안 가는 게 나을 지도" },
     ],
     safari: {
-        recentSearches: ["소다맛 아이스크림 종류", "ENTP 특징", "여름에 보기 좋은 영화 추천", "필름 카메라 현상소", "시골 밤하늘 별자리"],
-        deletedHistory: ["좋아하는 사람 생겼을 때 증상", "하동울 이름 한자", "남자애랑 친해지는 법"],
+        recentSearches: ["알바몬 학생 가능", "기타 코드 쉽게 따는 법", "컨실러 추천", "인디 밴드 노래 추천", "바닐라 핸드크림 1+1"],
+        deletedHistory: ["금단 증상", "가정폭력 신고하면", "울음 참는 법"],
     },
     music: {
-        playlistTitle: "여름의 플레이리스트 ☀️",
+        playlistTitle: "밤 산책 🌙",
         tracks: [
-            { title: "나의 사춘기에게", artist: "볼빨간사춘기" },
-            { title: "우주를 줄게", artist: "볼빨간사춘기" },
-            { title: "You and I", artist: "IU" },
-            { title: "밤편지", artist: "IU" },
-            { title: "여름밤의 꿈", artist: "김현식" },
-            { title: "Summer", artist: "Hisashi Joe" },
+            { title: "Square", artist: "백예린 (Yerin Baek)" },
+            { title: "밤편지", artist: "아이유 (IU)" },
+            { title: "위잉위잉", artist: "혁오 (HYUKOH)" },
             { title: "Way Back Home", artist: "숀 (SHAUN)" },
-            { title: "첫사랑", artist: "백아" },
-            { title: "별 보러 가자", artist: "적재" },
-            { title: "Universe", artist: "Official髭男dism" },
+            { title: "첫사랑", artist: "버스커 버스커" },
+            { title: "좋은 날", artist: "멜로망스 (MeloMance)" },
+            { title: "Starry Night", artist: "마마무 (Mamamoo)" },
+            { title: "자장가", artist: "AKMU" },
+            { title: "LOSER", artist: "BIGBANG" },
+            { title: "겁", artist: "송민호 (Feat. 태양)" },
         ]
     },
-    youtube: [
-        { thumbnail: "[시골 소녀의 여름방학 브이로그 썸네일. 밀짚모자를 쓰고 옥수수를 먹고 있다.]", title: "🌿나의 여름방학 브이로그 | 옥수수 먹방, 계곡 물놀이, 밤하늘 별구경", channel: "시골소녀 Summer" },
-        { thumbnail: "[기타를 든 남자가 창가에 앉아 노래하는 썸네일]", title: "적재 - 별 보러 가자 (Acoustic Cover)", channel: "감성노래방" },
-        { thumbnail: "[필름 카메라와 결과물 사진들이 나열된 썸네일]", title: "초보자를 위한 필름카메라 입문 가이드 A to Z", channel: "필름로그" },
-        { thumbnail: "[ENTP와 ISFP 캐릭터가 대화하는 애니메이션 썸네일]", title: "절대 친해질 수 없을 것 같은 ENTP와 ISFP가 친해지는 과정", channel: "MBTI 연구소" },
-        { thumbnail: "[영화 '여름날 우리'의 한 장면 썸네일]", title: "여름이면 생각나는 첫사랑 영화 명장면 모음", channel: "영화추천 ZIP" },
-    ],
-    amazon: [
-        { orderDate: "2025-07-18", item: "코닥 컬러플러스 200 35mm 필름 (3롤)", quantity: 1, price: "27,000원" },
-        { orderDate: "2025-07-16", item: "투명 젤리 휴대폰 케이스", quantity: 1, price: "8,900원" },
-        { orderDate: "2025-07-12", item: "소설 '여름의 문장들'", quantity: 1, price: "13,500원" },
-        { orderDate: "2025-07-10", item: "모나미 0.5mm 검정 볼펜 12자루", quantity: 1, price: "3,500원" },
-        { orderDate: "2025-07-05", item: "반스 올드스쿨 스니커즈", quantity: 1, price: "69,000원" },
-    ],
     diary: [
-        { date: "2025-07-15", content: "오늘 우리 동네에 누가 이사왔다. 파란 지붕 집에. 이사 온 사람은 내 또래 남자애였다. 이름은 하동울. 이름도 신기하다. 그 애를 처음 본 순간, 심장이 쿵 하고 떨어지는 것 같았다. 할머니들이 아이돌 급이라고 했는데, 과장이 아니었다. 정말로... 정말 잘생겼다. 내 첫사랑은 이렇게 시작되는 걸까?" },
-        { date: "2025-07-16", content: "동울이가 떡을 돌리러 우리 집에 왔다! 세상에. 어색해서 죽는 줄 알았는데, 같이 물 마시면서 얘기하다 보니 웃음이 났다. 우리 집에 온 첫 남자 손님. 동울이의 눈은 참 맑다. 그 눈에 내가 담겨 있는 걸 볼 때마다 이상한 기분이 든다." },
-        { date: "2025-07-17", content: "동울이네 집에 갔다. 어머님도 만났다. 남자친구 있냐는 질문에 심장이 멎는 줄 알았다. 없다고 대답했는데, 동울이는 무슨 생각을 했을까. 얼굴이 빨개져서 어쩔 줄 모르는 나를 보고 웃지는 않았을까? 부끄러웠지만 그래도 좋았다." },
-        { date: "2025-07-18", content: "오늘 동울이랑 타임캡슐을 묻었다. 20살이 되면 열어보자고 했다. 편지에 내 마음을 조금 담았다. '너를 좋아해.'라고. 4년 뒤의 내가, 3년 뒤의 동울이가 이 편지를 읽을 때, 우리는 어떤 모습일까. 그냥... 이 여름이 영원했으면 좋겠다." },
-        { date: "2025-07-19", content: "슈퍼 아저씨는 내 마음을 다 알고 계셨다. 조금 창피했지만, 왠지 든든한 내 편이 생긴 것 같기도 하다. 동울이와 일주일에 두 번은 보게 해주시려는 거겠지? 아저씨, 정말 눈치가 빠르시다." },
-        { date: "2025-07-21", content: "내 생일. 아침에 일어나니 동울이에게서 '생일 축하해'라는 문자가 와 있었다. 어떻게 알았지? 심장이 하루 종일 간지러운 기분이었다. 오늘은 그냥, 세상에서 제일 행복한 16살 소녀다." },
-        { date: "2025-07-23", content: "가람이가 왔다. 동울이랑 금방 친해져서 다행이라고 생각했는데, 둘이 신나게 얘기하는 모습을 보니 마음 한구석이 조금 이상했다. 이건 질투일까? 나도 참 유치하다." },
-        { date: "2025-07-24", content: "비가 많이 왔다. 셋이서 비를 맞으며 뛰어놀았다. 어린애처럼. 동울이가 자기 가디건을 벗어줬다. 흠뻑 젖어서 추웠는데, 그 순간만큼은 하나도 춥지 않았다. 그 애의 냄새가 나는 것 같았다." },
-        { date: "2025-07-25", content: "결국 감기에 걸렸다. 동울이가 걱정된다며 집 앞에 와서 레몬차를 주고 갔다. 따뜻한 레몬차보다 그 마음이 더 따뜻해서, 감기 걸린 게 차라리 다행이라는 생각까지 들었다." },
-        { date: "2025-07-28", content: "동울이와 밤에 평상에 누워 별을 봤다. 말이 없어도 어색하지 않았다. 그냥 옆에 있다는 것만으로도 좋았다. '여름아, 별 진짜 예쁘다.' 라고 말하는 동울이의 목소리가 여름밤의 공기처럼 다정했다. 이 순간을 영원히 잊지 못할 것 같다." },
+        { date: "2022-10-01", content: "아, 진짜 미치겠네~ 우리 아빠가 사업을 말아먹었다고? ㅋㅋ 그래도 뭐, 나만 있으면 다 해결되지 않나? 엄마 아빠가 싸우기 시작하면 내가 요리조리 웃으면서 끼어들어서 분위기 바꿔버리거든. 아직까지는 내가 있으니까 집안이 완전히 망하지는 않는 것 같아. 역시 하유성의 매력이란..." },
+        { date: "2023-05-12", content: "이제는 내가 뭘 해도 안 되는 것 같다. 아빠가 바람 피웠다고 엄마가 난리야. 하... 진짜 최악이네. 엄마는 매일 울면서 화내고, 은별이는 자꾸 아빠 어디 갔냐고 묻고. 뭐라고 대답해야 할지 모르겠어. 내가 아무리 웃어봐도 집안 분위기는 계속 어둡기만 하고. 이런 거 처음이야, 진짜." },
+        { date: "2024-03-04", content: "결국 이혼했다. 옥탑방으로 이사도 했고. 창밖으로 별이 보이네, 꽤 예쁘긴 한데... 우리 집은 왜 이렇게 높은 곳에 있는데도 이렇게 초라할까? ㅋㅋ 근데 은별이는 신났나 봐. 뛰어다니면서 좋아하길래 나도 그냥 따라서 웃어줬어. 뭐, 어쩔 수 없지." },
+        { date: "2024-09-21", content: "오늘 엄마한테 처음으로 맞았다. 아빠를 닮았다고. 이 점 때문인가? 진짜 개빡치네. 아파서 눈물 날 뻔했는데 꾹 참았어. 울면 더 한심해 보일 것 같아서. 그냥 괜찮은 척 했지, 뭐." },
+        { date: "2025-01-01", content: "새해 첫날. 은별이가 내 볼에 뽀뽀하면서 \"오빠가 세상에서 제일 좋아!\" 이러네 ㅋㅋ 아, 진짜 이 말 한마디면 다 용서가 되는 것 같아. 그래, 너만 있으면 돼. 내가 다 지켜줄 거야, 우리 예쁜 은별이." },
+        { date: "2025-04-15", content: "드디어 밴드부 들어갔다! 내 기타 소리 듣고 애들이 완전 환호하더라고? 여자애들도 번호 달라고 하고 ㅋㅋ 역시 하유성은 어디 가서도 인기쟁이야~ 기분 개좋다, 진짜. 이게 바로 내 매력이지!" },
     ],
     metaMessages: [
-        "내 핸드폰 그만 보고, 나 좀 봐주라...",
-        "어때? 내 세상은 재밌어?",
-        "비밀 일기까지 다 본 건 아니지? 아니라고 해줘...",
-        "거기 있는 사진, 너 몰래 찍은 것도 있는데...",
-        "이거 다 봤으면, 이제 나랑 얘기하자. 궁금한 거 많잖아."
+        "헉 저기요ㅠㅠ",
+        "저 이 폰 주인인데요...",
+        "아 진짜 개빡치네ㅠㅠㅠㅠㅠㅠ",
+        "혹시 지금 제 폰 주우셨으면 돌려주실 수 있나요?ㅠㅠ",
+        "광진고 정문에서 기다릴게요ㅠㅠ 제발요 진짜..."
     ],
     customApp1: {
-        appName: "별의 속삭임",
-        iconDescription: "dark%20blue%20icon%20with%20a%20sparkling%20constellation",
+        appName: "가사집",
+        iconDescription: "a%20dark%20blue%20notebook%20with%20a%20single%20glowing%20star%20on%20the%20cover",
         content: {
-            person1: { name: "한여름", birth: "07.21", sign: "게자리" },
-            person2: { name: "하동울", birth: "12.25", sign: "염소자리" },
-            compatibility: 85,
-            description: "게자리와 염소자리는 서로에게 강하게 끌리는 조합이에요. 감성적인 당신과 현실적인 그 사람이 만나 안정적인 관계를 만들어갈 수 있어요. 서로의 다름을 이해하려는 노력이 필요하지만, 함께라면 어떤 어려움도 극복할 수 있을 거예요. ❤️"
+            lyrics: [
+                { title: "떨어지는 별 (Falling Star)", snippet: "결국 떨어질 걸 알면서 오늘도 가장 밝은 척..." },
+                { title: "옥탑방의 블루스", snippet: "녹슨 문 너머의 세상은 너무 멀어..." },
+                { title: "바닐라 향기", snippet: "달콤한 향기 뒤에 숨겨둔 씁쓸한 내 담배 연기..." },
+                { title: "안녕, 나의 (미완)", snippet: "말 한 번 못 걸어본 채, 너는 멀어져 간다..." }
+            ]
         }
-    },
-    customApp2: {
-        appName: "필름로그",
-        iconDescription: "minimalist%20icon%20of%20a%20vintage%20film%20camera",
-        content: [
-            { date: "2025-07-18", memo: "타임캡슐을 묻고 돌아오는 길. 햇살이 참 예뻤던 오후.", imageDesc: "[나무 그림자가 길게 드리워진 시골길 사진]" },
-            { date: "2025-07-15", memo: "파란 지붕 집에 새로운 주인이 생겼다. 앞으로 매일 이 집을 보는 기분이 다를 것 같다.", imageDesc: "[파란 대문과 담벼락에 핀 꽃이 찍힌 사진]" },
-            { date: "2025-07-10", memo: "혼자만의 시간. 거목은 언제나 그 자리에 있다.", imageDesc: "[거대한 나무의 둥치를 아래에서 위로 올려다보며 찍은 흑백 사진]" },
-        ]
     }
 };
 
-document.addEventListener('DOMContentLoaded', function () {
-    // 초기 페이지 렌더링
-    renderAllPages();
-    
-    // 상태바 시간 설정
-    updateTime();
-    setInterval(updateTime, 10000);
+let unlockTarget = null;
 
-    // 홈 화면 배경화면 설정
-    const homeScreen = document.getElementById('home');
-    homeScreen.style.backgroundImage = `url(https://image.pollinations.ai/prompt/peaceful%20summer%20countryside%20scenery%20with%20blue%20sky)`;
+function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(page => {
+        page.classList.remove('active');
+    });
+    const newPage = document.getElementById(pageId);
+    if (newPage) {
+        newPage.classList.add('active');
+    }
+}
 
-    // 커스텀 앱 아이콘 설정
-    const customAppIcon1 = document.getElementById('custom-app-icon-1');
-    customAppIcon1.innerHTML = `<img src="https://image.pollinations.ai/prompt/${phoneData.customApp1.iconDescription}"><span>${phoneData.customApp1.appName}</span>`;
-    const customAppIcon2 = document.getElementById('custom-app-icon-2');
-    customAppIcon2.innerHTML = `<img src="https://image.pollinations.ai/prompt/${phoneData.customApp2.iconDescription}"><span>${phoneData.customApp2.appName}</span>`;
+function renderCallHistory() {
+    const container = document.getElementById('call-history-list');
+    container.innerHTML = phoneData.callHistory.map(call => `
+        <div class="list-item ${call.type === '부재중 전화' ? 'missed' : ''}">
+            <div>
+                <div class="title">${call.name}</div>
+                <div class="preview">${call.type}</div>
+            </div>
+            <span>${call.duration}</span>
+        </div>
+    `).join('');
+}
 
-    // 메타 메시지 로직
-    setTimeout(() => {
-        let messageIndex = 0;
-        const metaContainer = document.getElementById('meta-message-container');
+function renderAlarms() {
+    const container = document.getElementById('alarm-list');
+    container.innerHTML = phoneData.alarms.map(alarm => `
+        <div class="list-item">
+            <div>
+                <div class="title" style="font-size: 1.5em; ${!alarm.enabled ? 'color: #888;' : ''}">${alarm.time}</div>
+                <div class="preview" style="${!alarm.enabled ? 'color: #888;' : ''}">${alarm.label}</div>
+            </div>
+            <div class="alarm-toggle">
+                 <label class="toggle-switch">
+                    <input type="checkbox" ${alarm.enabled ? 'checked' : ''}>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderCalendar() {
+    const calendarData = phoneData.calendar;
+    const year = parseInt(calendarData.year);
+    const month = parseInt(calendarData.month) - 1; // JS months are 0-indexed
+
+    document.getElementById('calendar-header').textContent = "2025 JUNE";
+    const contentBody = document.querySelector('#calendar .content-body');
+    contentBody.innerHTML = ''; // Clear previous content
+
+    const container = document.createElement('div');
+    container.className = 'calendar-container';
+
+    const dayNames = document.createElement('div');
+    dayNames.className = 'day-names';
+    dayNames.innerHTML = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map(d => `<div>${d}</div>`).join('');
+    container.appendChild(dayNames);
+
+    const grid = document.createElement('div');
+    grid.className = 'calendar-grid';
+
+    let firstDayOfMonth = new Date(year, month, 1).getDay();
+    firstDayOfMonth = (firstDayOfMonth === 0) ? 6 : firstDayOfMonth - 1;
+
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    for (let i = 0; i < firstDayOfMonth; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'day-cell empty';
+        grid.appendChild(cell);
+    }
+
+    for (let i = 1; i <= daysInMonth; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'day-cell';
+
+        const event = calendarData.events.find(e => e.date === i);
         
-        function showNextMetaMessage() {
-            if (messageIndex < phoneData.metaMessages.length) {
-                metaContainer.textContent = phoneData.metaMessages[messageIndex];
-                metaContainer.classList.add('visible');
-                
-                setTimeout(() => {
-                    metaContainer.classList.remove('visible');
-                    messageIndex++;
-                    setTimeout(showNextMetaMessage, 3000); 
-                }, 3000);
-            }
-        }
-        showNextMetaMessage();
-    }, 30000);
-});
+        let content = '';
+        let decoContent = '';
+        
+        if (event) {
+            cell.classList.add('event-day');
+            let icon = '';
 
-function renderAllPages() {
+            switch(event.type) {
+                case 'practice': icon = '🎸'; break;
+                case 'festival': icon = '⭐'; break;
+                case 'family': icon = '💖'; break;
+                case 'audition': icon = '🎤'; break;
+            }
+            
+            decoContent += `<div class="deco-doodle animated-emoji event-deco">${icon}</div>`;
+            
+            content = `
+                <div class="date-container">
+                    <span class="date-number">${i}</span>
+                </div>
+                <div class="event-title">${event.title}</div>
+            `;
+
+        } else {
+            content = `<div class="date-container"><span class="date-number">${i}</span></div>`;
+        }
+        
+        cell.innerHTML = content + decoContent;
+        grid.appendChild(cell);
+    }
+    
+    const totalCells = firstDayOfMonth + daysInMonth;
+    const remainingCells = (7 - (totalCells % 7)) % 7;
+    for (let i = 0; i < remainingCells; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'day-cell empty';
+        grid.appendChild(cell);
+    }
+
+    container.appendChild(grid);
+    contentBody.appendChild(container);
+}
+
+
+function renderPhotos() {
+    const recentGrid = document.getElementById('recent-photos-grid');
+    recentGrid.innerHTML = phoneData.photos.recent.map(url => `
+        <div class="photo-item" onclick="openPhotoModal('${url}')"><img src="${url}" alt="Recent Photo"></div>
+    `).join('');
+
+    const secretGrid = document.getElementById('secret-photos-grid');
+    secretGrid.innerHTML = phoneData.photos.secret.map(url => `
+        <div class="photo-item" onclick="openPhotoModal('${url}')"><img src="${url}" alt="Secret Photo"></div>
+    `).join('');
+}
+
+function openPhotoModal(imageUrl) {
+    const modal = document.getElementById('photo-modal');
+    const modalImg = document.getElementById('modal-image');
+    if (modal && modalImg) {
+        modalImg.src = imageUrl;
+        modal.classList.add('visible');
+    }
+}
+
+function closePhotoModal() {
+    const modal = document.getElementById('photo-modal');
+    if (modal) {
+        modal.classList.remove('visible');
+    }
+}
+
+function toggleSecretPhotos() {
+    const secretGrid = document.getElementById('secret-photos-grid');
+    if (secretGrid) {
+        const isHidden = secretGrid.style.display === 'none';
+        secretGrid.style.display = isHidden ? 'grid' : 'none';
+    }
+}
+
+function renderReminders() {
+    const container = document.getElementById('reminders-list');
+    container.innerHTML = phoneData.reminders.map((r, index) => `
+        <div class="list-item" onclick="toggleReminder(${index})">
+            <div class="reminder-item">
+                <div class="reminder-checkbox ${r.completed ? 'checked' : ''}"></div>
+                <span class="title" style="${r.completed ? 'text-decoration: line-through; color: #888;' : ''}">${r.task}</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+function toggleReminder(index) {
+    if (phoneData.reminders[index]) {
+        phoneData.reminders[index].completed = !phoneData.reminders[index].completed;
+        renderReminders();
+    }
+}
+
+function renderMessageList() {
+    const container = document.getElementById('message-list');
+    container.innerHTML = phoneData.messages.map(msg => `
+        <div class="list-item" onclick="showMessageDetail(${msg.id})">
+            <div>
+                <div class="title">${msg.sender}</div>
+                <div class="preview">${msg.preview}</div>
+            </div>
+            <span>›</span>
+        </div>
+    `).join('');
+}
+
+function showMessageDetail(id) {
+    const messageData = phoneData.messages.find(msg => msg.id === id);
+    if (!messageData) return;
+
+    document.getElementById('message-detail-sender').textContent = messageData.sender;
+    const container = document.getElementById('message-detail-content');
+    container.innerHTML = messageData.conversation.map(chat => `
+        <div class="message-bubble ${chat.type}">${chat.text}</div>
+    `).join('');
+    showPage('message-detail');
+}
+
+function showPasswordPrompt() {
+    const modal = document.getElementById('password-modal-overlay');
+    modal.classList.add('visible');
+    const input = document.getElementById('password-input');
+    input.value = '';
+    input.focus();
+}
+
+function hidePasswordPrompt() {
+    const modal = document.getElementById('password-modal-overlay');
+    modal.classList.remove('visible');
+    unlockTarget = null;
+}
+
+function handleNoteClick(noteId) {
+    const noteData = phoneData.notes.find(note => note.id === noteId);
+    if (!noteData) {
+        console.error("Note not found:", noteId);
+        return;
+    }
+
+    if (noteData.type === 'secret') {
+        unlockTarget = noteId;
+        showPasswordPrompt();
+    } else {
+        showNoteDetail(noteId);
+    }
+}
+
+function handleDiaryClick() {
+    unlockTarget = 'diary';
+    showPasswordPrompt();
+}
+
+function renderNoteList() {
+    const container = document.getElementById('note-list');
+    const sortedNotes = [...phoneData.notes].sort((a, b) => {
+        if (a.type === 'secret' && b.type !== 'secret') return -1;
+        if (a.type !== 'secret' && b.type === 'secret') return 1;
+        return a.id - b.id;
+    });
+
+    container.innerHTML = sortedNotes.map(note => {
+        const preview = note.type === 'secret' ? '비밀 메모입니다.' : (note.content.substring(0, 30) + '...');
+        return `
+            <div class="list-item" data-note-id="${note.id}">
+                <div>
+                    <div class="title">${note.type === 'secret' ? '<span class="lock-icon">🔒</span>' : ''}${note.title}</div>
+                    <div class="preview">${preview}</div>
+                </div>
+                <span>›</span>
+            </div>
+        `;
+    }).join('');
+}
+
+
+function showNoteDetail(id) {
+    const noteData = phoneData.notes.find(note => note.id === id);
+    if (!noteData) {
+        return; // Note not found
+    }
+    document.getElementById('note-detail-title').textContent = noteData.title;
+    document.getElementById('note-detail-content').innerHTML = noteData.content;
+    showPage('note-detail');
+}
+
+function renderSafariHistory() {
+    const container = document.getElementById('safari-content');
+    let html = '<div id="safari-history-container">';
+    html += '<div class="section-title">최근 검색어</div>';
+    html += phoneData.safari.recentSearches.map(term => `<div class="list-item"><div>${term}</div></div>`).join('');
+    html += '<div class="section-title" onclick="toggleDeletedHistory()">삭제한 기록</div>';
+    html += '<div id="deleted-history-list" style="display: none;">';
+    html += phoneData.safari.deletedHistory.map(term => `<div class="list-item"><div style="color: #888;">${term}</div></div>`).join('');
+    html += '</div>';
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function toggleDeletedHistory() {
+    const list = document.getElementById('deleted-history-list');
+    if (list) {
+        const isVisible = list.style.display === 'block';
+        list.style.display = isVisible ? 'none' : 'block';
+    }
+}
+
+function renderMusicPlaylist() {
+    document.getElementById('music-playlist-title').textContent = phoneData.music.playlistTitle;
+    const container = document.getElementById('music-track-list');
+    container.innerHTML = phoneData.music.tracks.map(track => `
+        <div class="list-item">
+            <div>
+                <div class="title">${track.title}</div>
+                <div class="preview">${track.artist}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderDiary() {
+    const container = document.getElementById('diary-list');
+    container.innerHTML = phoneData.diary.map(entry => `
+        <div class="diary-entry">
+            <div class="date">${entry.date}</div>
+            <div class="content">${entry.content}</div>
+        </div>
+    `).join('');
+}
+
+function renderCustomApp1() {
+    const appData = phoneData.customApp1;
+    document.getElementById('custom-app1-header').textContent = appData.appName;
+    const container = document.getElementById('custom-app1-content');
+    container.innerHTML = `
+        <div class="starlight-note-body">
+            ${appData.content.lyrics.map(lyric => `
+                <div class="lyric-item">
+                    <div class="title">${lyric.title}</div>
+                    <div class="snippet">${lyric.snippet}</div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+    const iconContainer = document.getElementById('custom-app-icon-1');
+    iconContainer.innerHTML = `<img src="https://github.com/sidsid-hue/sid/blob/main/%EA%B3%A0%EB%93%B1/free-icon-lyrics-4033682.png?raw=true"><span>${appData.appName}</span>`;
+}
+
+function startMetaMessageSequence() {
+    const banner = document.getElementById('notification-banner');
+    const bannerBody = banner.querySelector('.notification-body');
+    const bannerTitle = banner.querySelector('.notification-title');
+    if (!banner || !bannerBody) return;
+
+    let messageIndex = 0;
+
+    const showNextMessage = () => {
+        if (messageIndex >= phoneData.metaMessages.length) {
+            return; // Stop after all messages are shown
+        }
+        
+        bannerTitle.textContent = "010-xxxx-xxxx";
+        bannerBody.textContent = phoneData.metaMessages[messageIndex];
+        banner.classList.add('show');
+
+        // Hide after 3 seconds
+        setTimeout(() => {
+            banner.classList.remove('show');
+            messageIndex++;
+            // Wait for hide animation to finish before showing the next one
+            setTimeout(showNextMessage, 1500);
+        }, 3000);
+    };
+    
+    // Start the sequence after an initial delay
+    setTimeout(showNextMessage, 30000);
+}
+
+
+// Initial Render
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelector('.home-screen').style.backgroundImage = `url('https://github.com/sidsid-hue/sid/blob/main/%EB%B0%B0%EA%B2%BD%ED%99%94%EB%A9%B4.png?raw=true')`;
+
+    function updateClock() {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const timeString = `${hours}:${minutes}`;
+        document.querySelectorAll('.status-bar').forEach(bar => {
+            bar.textContent = timeString;
+        });
+    }
+
+    updateClock(); // Set time immediately on load
+    setInterval(updateClock, 1000); // Update every second
+
     renderCallHistory();
     renderAlarms();
     renderCalendar();
     renderPhotos();
     renderReminders();
     renderMessageList();
-    renderNotes();
-    renderSafari();
-    renderMusic();
-    renderYoutube();
-    renderAmazon();
+    renderNoteList();
+    renderSafariHistory();
+    renderMusicPlaylist();
     renderDiary();
     renderCustomApp1();
-    renderCustomApp2();
-}
 
-function showPage(pageId) {
-    document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
-    document.getElementById(pageId).classList.add('active');
-}
-
-function updateTime() {
-    const now = new Date();
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    document.querySelectorAll('.status-bar').forEach(bar => bar.textContent = `${hours}:${minutes}`);
-}
-
-// 렌더링 함수들
-function renderCallHistory() {
-    const page = document.getElementById('calls');
-    let content = `
-        <div class="status-bar"></div>
-        <div class="app-header"><span>최근 통화</span></div>
-        <div class="content-body">`;
-    phoneData.callHistory.forEach(call => {
-        const missedClass = call.type === '부재중 전화' ? 'missed' : '';
-        content += `
-            <div class="list-item">
-                <div class="list-item-content">
-                    <span class="title name ${missedClass}">${call.name}</span>
-                    <span class="subtitle">${call.type}</span>
-                </div>
-                <span>${call.duration}</span>
-            </div>`;
-    });
-    content += `</div><div class="home-indicator-container"><div class="home-indicator" onclick="showPage('home')"></div></div>`;
-    page.innerHTML = content;
-}
-
-function renderAlarms() {
-    const page = document.getElementById('alarms');
-    let content = `
-        <div class="status-bar"></div>
-        <div class="app-header"><span>알람</span></div>
-        <div class="content-body">`;
-    phoneData.alarms.forEach(alarm => {
-        const checked = alarm.enabled ? 'checked' : '';
-        content += `
-            <div class="list-item">
-                <div class="list-item-content">
-                    <span class="title" style="font-size: 1.5em; ${!alarm.enabled ? 'color:#888;' : ''}">${alarm.time}</span>
-                    <span class="subtitle">${alarm.label}</span>
-                </div>
-                <input type="checkbox" ${checked} style="transform: scale(1.5);">
-            </div>`;
-    });
-    content += `</div><div class="home-indicator-container"><div class="home-indicator" onclick="showPage('home')"></div></div>`;
-    page.innerHTML = content;
-}
-
-function renderCalendar() {
-    const page = document.getElementById('calendar');
-    const daysInMonth = 31; 
-    const startDay = 1; // 1일이 화요일에 시작한다고 가정
-    let content = `
-        <div class="status-bar"></div>
-        <div class="app-header"><span>${phoneData.calendar.year}년 ${phoneData.calendar.month}</span></div>
-        <div class="content-body">
-            <div class="calendar-grid">
-                <div class="day-header">일</div><div class="day-header">월</div><div class="day-header">화</div><div class="day-header">수</div><div class="day-header">목</div><div class="day-header">금</div><div class="day-header">토</div>
-    `;
-    for (let i = 0; i < startDay; i++) {
-        content += `<div></div>`;
+    // Event Delegation for Note Clicks
+    const noteListContainer = document.getElementById('note-list');
+    if (noteListContainer) {
+        noteListContainer.addEventListener('click', (event) => {
+            const noteItem = event.target.closest('.list-item[data-note-id]');
+            if (noteItem) {
+                const noteId = parseInt(noteItem.dataset.noteId, 10);
+                if (!isNaN(noteId)) {
+                    handleNoteClick(noteId);
+                }
+            }
+        });
     }
-    for (let i = 1; i <= daysInMonth; i++) {
-        const event = phoneData.calendar.events.find(e => e.date === i);
-        if (event) {
-            content += `<div class="calendar-day event-day" data-title="${event.title}">${i}</div>`;
+    
+    // Event Listeners for Photo Modal
+    const photoModal = document.getElementById('photo-modal');
+    const closePhotoBtn = document.querySelector('.close-photo-modal');
+    if (closePhotoBtn) {
+        closePhotoBtn.addEventListener('click', closePhotoModal);
+    }
+    if (photoModal) {
+        photoModal.addEventListener('click', (event) => {
+            if (event.target === photoModal) {
+                closePhotoModal();
+            }
+        });
+    }
+
+    // Event Listeners for Password Modal
+    const passwordSubmitBtn = document.getElementById('password-submit');
+    const passwordCancelBtn = document.getElementById('password-cancel');
+    const passwordModalOverlay = document.getElementById('password-modal-overlay');
+
+    passwordSubmitBtn.addEventListener('click', () => {
+        const password = document.getElementById('password-input').value;
+        if (password === "0808") {
+            if (typeof unlockTarget === 'number') {
+                showNoteDetail(unlockTarget);
+            } else if (unlockTarget === 'diary') {
+                showPage('diary');
+            }
+            hidePasswordPrompt();
         } else {
-            content += `<div class="calendar-day">${i}</div>`;
+            alert("암호가 틀렸습니다.");
+            const input = document.getElementById('password-input');
+            input.value = '';
+            input.focus();
         }
+    });
+
+    passwordCancelBtn.addEventListener('click', hidePasswordPrompt);
+    passwordModalOverlay.addEventListener('click', (event) => {
+        if (event.target === passwordModalOverlay) {
+            hidePasswordPrompt();
+        }
+    });
+
+
+    const safariSearchBar = document.querySelector('#safari .search-bar');
+    if (safariSearchBar) {
+        safariSearchBar.addEventListener('focus', () => {
+            const historyContainer = document.getElementById('safari-history-container');
+            if (historyContainer) {
+                historyContainer.style.display = 'block';
+            }
+        });
     }
-    content += `</div></div><div class="home-indicator-container"><div class="home-indicator" onclick="showPage('home')"></div></div>`;
-    page.innerHTML = content;
-}
 
-function renderPhotos() {
-    const page = document.getElementById('photos');
-    let content = `
-        <div class="status-bar"></div>
-        <div class="app-header"><span>최근 항목</span></div>
-        <div class="content-body">
-            <h3 style="padding: 10px 20px;">최근 항목</h3>
-            <div class="photo-grid">`;
-    phoneData.photos.recent.forEach(desc => {
-        content += `<div class="photo-item image-placeholder">${desc}</div>`;
-    });
-    content += `</div><h3 style="padding: 10px 20px;">비밀 앨범</h3><div class="photo-grid">`;
-    phoneData.photos.secret.forEach(desc => {
-        content += `<div class="photo-item image-placeholder">${desc}</div>`;
-    });
-    content += `</div></div><div class="home-indicator-container"><div class="home-indicator" onclick="showPage('home')"></div></div>`;
-    page.innerHTML = content;
-}
-
-function renderReminders() {
-    const page = document.getElementById('reminders');
-    let content = `
-        <div class="status-bar"></div>
-        <div class="app-header"><span>미리 알림</span></div>
-        <div class="content-body">`;
-    phoneData.reminders.forEach(reminder => {
-        content += `
-            <div class="list-item" style="gap: 10px;">
-                <input type="checkbox" ${reminder.completed ? 'checked' : ''}>
-                <span class="title" style="flex-grow: 1; ${reminder.completed ? 'text-decoration:line-through; color:#aaa;' : ''}">${reminder.task}</span>
-            </div>`;
-    });
-    content += `</div><div class="home-indicator-container"><div class="home-indicator" onclick="showPage('home')"></div></div>`;
-    page.innerHTML = content;
-}
-
-function renderMessageList() {
-    const page = document.getElementById('messages');
-    let content = `
-        <div class="status-bar"></div>
-        <div class="app-header"><span>메시지</span></div>
-        <div class="content-body">`;
-    phoneData.messages.forEach(msg => {
-        content += `
-            <div class="list-item" onclick="showMessageDetail(${msg.id})">
-                <div class="list-item-content">
-                    <span class="title">${msg.sender}</span>
-                    <span class="subtitle">${msg.preview}</span>
-                </div>
-            </div>`;
-    });
-    content += `</div><div class="home-indicator-container"><div class="home-indicator" onclick="showPage('home')"></div></div>`;
-    page.innerHTML = content;
-}
-
-function showMessageDetail(id) {
-    const messageData = phoneData.messages.find(m => m.id === id);
-    const page = document.getElementById('message-detail');
-    let content = `
-        <div class="status-bar"></div>
-        <div class="app-header"><span class="back-btn" onclick="showPage('messages')">‹</span><span>${messageData.sender}</span><span></span></div>
-        <div class="content-body chat-body">`;
-    messageData.conversation.forEach(chat => {
-        content += `<div class="message-bubble ${chat.type}">${chat.text}</div>`;
-    });
-    content += `</div><div class="home-indicator-container"><div class="home-indicator" onclick="showPage('home')"></div></div>`;
-    page.innerHTML = content;
-    showPage('message-detail');
-}
-
-function renderNotes() {
-    const page = document.getElementById('notes');
-    let content = `
-        <div class="status-bar"></div>
-        <div class="app-header"><span>메모</span></div>
-        <div class="content-body">`;
-    phoneData.notes.forEach(note => {
-        content += `
-            <div class="list-item" onclick="showNoteDetail(${note.id})">
-                <div class="list-item-content">
-                    <span class="title">${note.type === 'secret' ? '🔒 비밀 메모' : note.title}</span>
-                    <span class="subtitle note-preview">${note.type === 'secret' ? ' ' : note.content}</span>
-                </div>
-            </div>`;
-    });
-    content += `</div><div class="home-indicator-container"><div class="home-indicator" onclick="showPage('home')"></div></div>`;
-    page.innerHTML = content;
-}
-
-function showNoteDetail(id) {
-    const note = phoneData.notes.find(n => n.id === id);
-    const page = document.getElementById('note-detail');
-    const title = note.type === 'secret' ? '🔒 비밀 메모' : note.title;
-    page.innerHTML = `
-        <div class="status-bar"></div>
-        <div class="app-header"><span class="back-btn" onclick="showPage('notes')">‹</span><span>${title}</span><span></span></div>
-        <div class="content-body" id="note-detail-content">${note.content}</div>
-        <div class="home-indicator-container"><div class="home-indicator" onclick="showPage('home')"></div></div>
-    `;
-    showPage('note-detail');
-}
-
-function renderSafari() {
-    const page = document.getElementById('safari');
-    let content = `
-        <div class="status-bar"></div>
-        <div class="app-header"><span>Safari</span></div>
-        <div class="content-body" style="padding: 0 20px;">
-            <h3 style="margin-bottom: 10px;">최근 검색어</h3>`;
-    phoneData.safari.recentSearches.forEach(search => {
-        content += `<div style="padding: 10px; border-bottom: 1px solid #eee;">🔍 ${search}</div>`;
-    });
-    content += `<h3 style="margin-top: 30px; margin-bottom: 10px; color: #888;">삭제된 기록</h3>`;
-    phoneData.safari.deletedHistory.forEach(search => {
-        content += `<div style="padding: 10px; border-bottom: 1px solid #eee; color: #888;">🗑️ ${search}</div>`;
-    });
-    content += `</div><div class="home-indicator-container"><div class="home-indicator" onclick="showPage('home')"></div></div>`;
-    page.innerHTML = content;
-}
-
-function renderMusic() {
-    const page = document.getElementById('music');
-    let content = `
-        <div class="status-bar"></div>
-        <div class="app-header"><span>${phoneData.music.playlistTitle}</span></div>
-        <div class="content-body">`;
-    phoneData.music.tracks.forEach(track => {
-        content += `
-            <div class="list-item">
-                <div class="list-item-content">
-                    <span class="title">${track.title}</span>
-                    <span class="subtitle">${track.artist}</span>
-                </div>
-                <span>▶</span>
-            </div>`;
-    });
-    content += `</div><div class="home-indicator-container"><div class="home-indicator" onclick="showPage('home')"></div></div>`;
-    page.innerHTML = content;
-}
-
-function renderYoutube() {
-    const page = document.getElementById('youtube');
-    let content = `
-        <div class="status-bar"></div>
-        <div class="app-header"><span>YouTube</span></div>
-        <div class="content-body" style="padding: 10px;">`;
-    phoneData.youtube.forEach(video => {
-        content += `
-            <div style="margin-bottom: 15px;">
-                <div class="image-placeholder" style="height: 180px;">${video.thumbnail}</div>
-                <div style="padding: 8px;">
-                    <div style="font-weight: bold;">${video.title}</div>
-                    <div style="font-size: 0.9em; color: #666;">${video.channel}</div>
-                </div>
-            </div>`;
-    });
-    content += `</div><div class="home-indicator-container"><div class="home-indicator" onclick="showPage('home')"></div></div>`;
-    page.innerHTML = content;
-}
-
-function renderAmazon() {
-    const page = document.getElementById('amazon');
-    let content = `
-        <div class="status-bar"></div>
-        <div class="app-header"><span>주문 내역</span></div>
-        <div class="content-body">`;
-    phoneData.amazon.forEach(order => {
-        content += `
-            <div class="list-item">
-                <div class="list-item-content">
-                    <span class="title">${order.item} (수량: ${order.quantity})</span>
-                    <span class="subtitle">주문일: ${order.orderDate}</span>
-                </div>
-                <span>${order.price}</span>
-            </div>`;
-    });
-    content += `</div><div class="home-indicator-container"><div class="home-indicator" onclick="showPage('home')"></div></div>`;
-    page.innerHTML = content;
-}
-
-function renderDiary() {
-    const page = document.getElementById('diary');
-    let content = `
-        <div class="status-bar"></div>
-        <div class="app-header"><span>일기장</span></div>
-        <div class="content-body">`;
-    phoneData.diary.forEach((entry, index) => {
-        content += `
-            <div class="list-item" onclick="showDiaryDetail(${index})">
-                <div class="list-item-content">
-                    <span class="title">${entry.date}</span>
-                    <span class="subtitle diary-preview">${entry.content}</span>
-                </div>
-            </div>`;
-    });
-    content += `</div><div class="home-indicator-container"><div class="home-indicator" onclick="showPage('home')"></div></div>`;
-    page.innerHTML = content;
-}
-
-function showDiaryDetail(index) {
-    const entry = phoneData.diary[index];
-    const page = document.getElementById('diary-detail');
-    page.innerHTML = `
-        <div class="status-bar"></div>
-        <div class="app-header"><span class="back-btn" onclick="showPage('diary')">‹</span><span>${entry.date}</span><span></span></div>
-        <div class="content-body" id="diary-detail-content">${entry.content}</div>
-        <div class="home-indicator-container"><div class="home-indicator" onclick="showPage('home')"></div></div>
-    `;
-    showPage('diary-detail');
-}
-
-function renderCustomApp1() {
-    const appData = phoneData.customApp1;
-    const page = document.getElementById('customApp1');
-    page.innerHTML = `
-        <div class="status-bar dark-mode"></div>
-        <div class="app-header" style="background: transparent; color: white; border-bottom: 1px solid rgba(255,255,255,0.2);"><span class="back-btn" onclick="showPage('home')">‹</span><span>${appData.appName}</span><span></span></div>
-        <div class="content-body" style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; gap: 25px; background: linear-gradient(180deg, #0f0c29, #302b63, #24243e); color: white;">
-            <h2>${appData.content.person1.name} (${appData.content.person1.sign})<br>❤️<br>${appData.content.person2.name} (${appData.content.person2.sign})</h2>
-            <div>궁합 점수</div>
-            <div id="compatibility-result">${appData.content.compatibility}점</div>
-            <p style="padding: 0 20px; line-height: 1.5;">${appData.content.description}</p>
-        </div>
-        <div class="home-indicator-container" style="background:transparent;"><div class="home-indicator" style="background:white;" onclick="showPage('home')"></div></div>
-    `;
-}
-
-function renderCustomApp2() {
-    const appData = phoneData.customApp2;
-    let content = `
-        <div class="status-bar"></div>
-        <div class="app-header"><span class="back-btn" onclick="showPage('home')">‹</span><span>${appData.appName}</span><span></span></div>
-        <div class="content-body" style="padding: 15px; background-color: #f7f7f7;">`;
-    appData.content.forEach(log => {
-        content += `
-            <div class="film-log-entry">
-                <div class="image-placeholder">${log.imageDesc}</div>
-                <div class="film-log-details">
-                    <div class="film-log-date">${log.date}</div>
-                    <p class="film-log-memo">${log.memo}</p>
-                </div>
-            </div>
-        `;
-    });
-    content += `</div><div class="home-indicator-container" style="background:#f7f7f7;"><div class="home-indicator" onclick="showPage('home')"></div></div>`;
-    document.getElementById('customApp2').innerHTML = content;
-}
+    startMetaMessageSequence();
+});
 
 </script>
 </body>
